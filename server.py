@@ -110,7 +110,12 @@ def cases():
     for row in signoffs:
         latest_signoff.setdefault(row[1], {'id':row[0],'run_id':row[2],'source':row[3],'action':row[4],'reason':row[5],'status':row[6],'created':row[7]})
     result = [catalog.public(item) for item in catalog.catalog()] + uploaded
+    unnamed_upload = 0
     for item in result:
+        is_upload = item.get('set') == 'upload' or item.get('source') == 'User upload'
+        if is_upload and (not item.get('name') or item['name'] == 'Uploaded comparison'):
+            unnamed_upload += 1
+            item['name'] = f'Untitled comparison {unnamed_upload:02d}'
         item['gate'] = case_gate(item)
         item['last_run'] = latest.get(item['id'])
         item['replay'] = replay_record(item['id'])
@@ -227,9 +232,15 @@ def image(case_id: str, scope: str):
 @app.post('/api/cases')
 async def upload(request: Request):
     try:
-        async with request.form(max_files=6, max_fields=14, max_part_size=MAX_REPORT) as form:
+        async with request.form(max_files=6, max_fields=15, max_part_size=MAX_REPORT) as form:
             if form.get('same_patient') != 'true' or form.get('chronological') != 'true':
                 raise ValueError('Confirm that both images belong to the same patient and are in chronological order.')
+            raw_name = form.get('comparison_name', '')
+            if not isinstance(raw_name, str):
+                raise ValueError('Comparison name must be text.')
+            comparison_name = ' '.join(raw_name.split())
+            if len(comparison_name) > 80:
+                raise ValueError('Use 80 characters or fewer for the comparison name.')
             blobs, metadata, views = {}, {}, {}
             for scope in ['prior','current']:
                 file = form.get(scope)
@@ -252,9 +263,11 @@ async def upload(request: Request):
             if len(reports)>4:
                 raise ValueError('Use at most four reports per case.')
             cid = 'upload-'+uuid.uuid4().hex[:12]
+            if not comparison_name:
+                comparison_name = f'Untitled comparison {cid[-4:].upper()}'
             folder = RUNTIME/'uploads'/cid
             folder.mkdir(parents=True, mode=0o700)
-            record = dict(id=cid,set='upload',slot=None,name='Uploaded comparison',source='User upload',
+            record = dict(id=cid,set='upload',slot=None,name=comparison_name,source='User upload',
                           purpose='Same patient and chronology confirmed by uploader; not independently verified.',
                           reports=reports)
             for scope,data in blobs.items():

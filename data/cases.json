@@ -2,7 +2,7 @@
   {
     "id": "case-1",
     "set": "demo",
-    "name": "1 \u00b7 No fluid, then fluid",
+    "name": "No fluid, then fluid",
     "purpose": "Earlier X-ray: no fluid. Current X-ray: new fluid on both sides. Each written report matches its own X-ray. Reports were written for this demo.",
     "source": "NIH ChestX-ray14",
     "patient_id": "78",
@@ -43,7 +43,7 @@
   {
     "id": "case-2",
     "set": "demo",
-    "name": "2 \u00b7 Images only",
+    "name": "Images only",
     "purpose": "Fluid on both sides in both X-rays (NIH labels). No written reports, so only the images are compared.",
     "source": "NIH ChestX-ray14",
     "patient_id": "99",
@@ -71,7 +71,7 @@
   {
     "id": "case-3",
     "set": "demo",
-    "name": "3 \u00b7 Front and back views",
+    "name": "Front and back views",
     "purpose": "The earlier X-ray was taken from the back (PA) and the current one from the front (AP). Different views can create or hide the look of fluid, so TimeLens refuses to compare them.",
     "source": "NIH ChestX-ray14",
     "patient_id": "13",
@@ -99,7 +99,7 @@
   {
     "id": "case-4",
     "set": "demo",
-    "name": "4 \u00b7 Report disagrees",
+    "name": "Report disagrees",
     "purpose": "Fluid on the right in both X-rays. The earlier report matches its X-ray, but the current report wrongly says the lungs are clear. Reports were written for this demo.",
     "source": "NIH ChestX-ray14",
     "patient_id": "61",
