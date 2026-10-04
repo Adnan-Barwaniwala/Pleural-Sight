@@ -1,0 +1,257 @@
+{
+ "id": "15b3eb4a4a0e4bb0bff487b2cb9f487e",
+ "case_id": "case-C",
+ "status": "complete",
+ "stage": "human_review",
+ "result": {
+  "gate": {
+   "comparable": true,
+   "reasons": [],
+   "flags": [],
+   "views": {
+    "prior": "PA",
+    "current": "PA"
+   }
+  },
+  "orchestrator": "headless",
+  "status": "needs_human_review",
+  "version": 2,
+  "reading": {
+   "data": {
+    "reading_a": {
+     "slot_order": "prior_first",
+     "prior": {
+      "state": "absent",
+      "side": "none",
+      "evidence": "Both the right and left costophrenic angles are sharp, well-defined, and fully visualized. There is no evidence of blunting, meniscus formation, or fluid tracking along the pleural margins.",
+      "limitations": [
+       "Slightly rotated projection",
+       "Scapular borders partially overlying the upper lung zones"
+      ]
+     },
+     "current": {
+      "state": "absent",
+      "side": "none",
+      "evidence": "Both costophrenic angles remain sharp and clear of fluid. There is some minor basilar atelectasis/haziness at the lung bases, but no meniscus sign or fluid tracking is present to suggest a pleural effusion.",
+      "limitations": [
+       "Poor inspiratory effort / low lung volumes",
+       "Mild cropping at the inferior margins near the costophrenic angles"
+      ]
+     },
+     "comparability_issues": [
+      "Significant interval change with surgical sternotomy wires visible in Film 2 which are absent in Film 1",
+      "Differences in inspiratory depth/lung volumes",
+      "Differences in projection (Film 2 appears to be an AP projection with wider clavicles and scapulae overlying the lung fields compared to Film 1)"
+     ],
+     "label": "absent",
+     "trace": {
+      "requested_model": "gemini-3.5-flash",
+      "used_model": "gemini-3.5-flash",
+      "returned_model": "gemini-3.5-flash",
+      "seconds": 10.344,
+      "model_requests": 1,
+      "input_tokens": 2360,
+      "output_tokens": 309
+     }
+    },
+    "reading_b": {
+     "slot_order": "current_first",
+     "prior": {
+      "state": "absent",
+      "side": "none",
+      "evidence": "The lateral costophrenic sulci are clear and sharp bilaterally. There is no meniscus sign, blunting, or lateral pleural thickening/fluid tracking visible on either side.",
+      "limitations": [
+       "Slight patient rotation to the right",
+       "Mildly limited inspiratory effort"
+      ]
+     },
+     "current": {
+      "state": "absent",
+      "side": "none",
+      "evidence": "Both the right and left costophrenic angles are sharp and well-defined without evidence of blunting, meniscus signs, or fluid tracking along the pleural walls. There is mild basilar atelectasis/haziness, particularly on the left, but no free-flowing pleural fluid is demonstrated.",
+      "limitations": [
+       "Suboptimal inspiration with low lung volumes",
+       "Overlying sternotomy wires and surgical clips"
+      ]
+     },
+     "comparability_issues": [
+      "Significant interval change in surgical hardware (sternal wires present in Film 1, absent in Film 2)",
+      "Differences in patient positioning and rotation",
+      "Differences in inspiratory depth/lung volume",
+      "Varying radiographic exposure and contrast levels"
+     ],
+     "label": "absent",
+     "trace": {
+      "requested_model": "gemini-3.5-flash",
+      "used_model": "gemini-3.5-flash",
+      "returned_model": "gemini-3.5-flash",
+      "seconds": 7.916,
+      "model_requests": 1,
+      "input_tokens": 2360,
+      "output_tokens": 302
+     }
+    },
+    "consistent": true
+   },
+   "trace": {
+    "model_requests": 2,
+    "requested_model": "gemini-3.5-flash",
+    "returned_model": "gemini-3.5-flash",
+    "seconds": 10.344,
+    "input_tokens": 4720,
+    "output_tokens": 611
+   }
+  },
+  "reports": {
+   "data": {
+    "claims": [
+     {
+      "report_index": 0,
+      "state": "absent",
+      "quote": "No pleural effusion."
+     }
+    ]
+   },
+   "trace": {
+    "requested_model": "gemini-3.5-flash",
+    "used_model": "gemini-3.5-flash",
+    "returned_model": "gemini-3.5-flash",
+    "seconds": 3.903,
+    "model_requests": 1,
+    "input_tokens": 128,
+    "output_tokens": 27
+   }
+  },
+  "reassessment": null,
+  "agents": [
+   {
+    "role": "image",
+    "label": "Blind Reader",
+    "tool": "read_pair",
+    "session_id": null,
+    "status": "completed_headless",
+    "seconds": 10.82,
+    "tool_calls": 1,
+    "tool_attempts": 1,
+    "rejected_tool_calls": 0,
+    "tool_trace": {
+     "model_requests": 2,
+     "requested_model": "gemini-3.5-flash",
+     "returned_model": "gemini-3.5-flash",
+     "seconds": 10.344,
+     "input_tokens": 4720,
+     "output_tokens": 611
+    }
+   },
+   {
+    "role": "report",
+    "label": "Report Reader",
+    "tool": "read_reports",
+    "session_id": null,
+    "status": "completed_headless",
+    "seconds": 3.93,
+    "tool_calls": 1,
+    "tool_attempts": 1,
+    "rejected_tool_calls": 0,
+    "tool_trace": {
+     "requested_model": "gemini-3.5-flash",
+     "used_model": "gemini-3.5-flash",
+     "returned_model": "gemini-3.5-flash",
+     "seconds": 3.903,
+     "model_requests": 1,
+     "input_tokens": 128,
+     "output_tokens": 27
+    }
+   },
+   {
+    "role": "investigator",
+    "label": "Investigator",
+    "tool": "reassess",
+    "session_id": null,
+    "status": "skipped_no_dispute",
+    "seconds": 0,
+    "tool_calls": 0,
+    "tool_attempts": 0,
+    "rejected_tool_calls": 0
+   }
+  ],
+  "verdict": {
+   "finding": "pleural_effusion",
+   "limitations": [
+    "Labels and model readings can be wrong.",
+    "Agent agreement is not a confidence score.",
+    "Research prototype; every flag needs clinician review."
+   ],
+   "status": "agrees",
+   "reading_label": "absent",
+   "order_swap_consistent": true,
+   "claims": [
+    {
+     "report_index": 0,
+     "state": "absent",
+     "quote": "No pleural effusion.",
+     "scope": "current",
+     "synthetic": true,
+     "verdict": "agreement"
+    }
+   ],
+   "summary": "Blind read (absent) matches the report."
+  }
+ },
+ "trace": [
+  {
+   "role": "image",
+   "label": "Blind Reader",
+   "tool": "read_pair",
+   "session_id": null,
+   "status": "completed_headless",
+   "seconds": 10.82,
+   "tool_calls": 1,
+   "tool_attempts": 1,
+   "rejected_tool_calls": 0,
+   "tool_trace": {
+    "model_requests": 2,
+    "requested_model": "gemini-3.5-flash",
+    "returned_model": "gemini-3.5-flash",
+    "seconds": 10.344,
+    "input_tokens": 4720,
+    "output_tokens": 611
+   }
+  },
+  {
+   "role": "report",
+   "label": "Report Reader",
+   "tool": "read_reports",
+   "session_id": null,
+   "status": "completed_headless",
+   "seconds": 3.93,
+   "tool_calls": 1,
+   "tool_attempts": 1,
+   "rejected_tool_calls": 0,
+   "tool_trace": {
+    "requested_model": "gemini-3.5-flash",
+    "used_model": "gemini-3.5-flash",
+    "returned_model": "gemini-3.5-flash",
+    "seconds": 3.903,
+    "model_requests": 1,
+    "input_tokens": 128,
+    "output_tokens": 27
+   }
+  },
+  {
+   "role": "investigator",
+   "label": "Investigator",
+   "tool": "reassess",
+   "session_id": null,
+   "status": "skipped_no_dispute",
+   "seconds": 0,
+   "tool_calls": 0,
+   "tool_attempts": 0,
+   "rejected_tool_calls": 0
+  }
+ ],
+ "error": null,
+ "created": 1791090285.4995308,
+ "updated": 1791090296.3505156,
+ "engine": "headless"
+}

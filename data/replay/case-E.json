@@ -1,0 +1,207 @@
+{
+ "id": "3f9efbd2382b49f0aafa7c59b5c7f71d",
+ "case_id": "case-E",
+ "status": "complete",
+ "stage": "human_review",
+ "result": {
+  "gate": {
+   "comparable": true,
+   "reasons": [],
+   "flags": [],
+   "views": {
+    "prior": "PA",
+    "current": "PA"
+   }
+  },
+  "orchestrator": "headless",
+  "status": "needs_human_review",
+  "version": 2,
+  "reading": {
+   "data": {
+    "reading_a": {
+     "slot_order": "prior_first",
+     "prior": {
+      "state": "absent",
+      "side": "none",
+      "evidence": "Both right and left costophrenic angles are sharp, clear, and well-defined with no blunting, meniscus sign, or pleural tracking along the chest wall.",
+      "limitations": [
+       "Overlying soft tissue shadows around lower thoracic margin"
+      ]
+     },
+     "current": {
+      "state": "absent",
+      "side": "none",
+      "evidence": "Both costophrenic angles remain sharp and clear bilaterally without visible blunting, fluid tracking, or meniscus signs.",
+      "limitations": [
+       "Overlying soft tissue shadows around lower thoracic margin"
+      ]
+     },
+     "comparability_issues": [
+      "No significant comparability issues identified; both films demonstrate identical positioning, exposure, inspiration depth, and projection."
+     ],
+     "label": "absent",
+     "trace": {
+      "requested_model": "gemini-3.5-flash",
+      "used_model": "gemini-3.6-flash",
+      "returned_model": "gemini-3.6-flash",
+      "seconds": 39.749,
+      "model_requests": 1,
+      "input_tokens": 2360,
+      "output_tokens": 145
+     }
+    },
+    "reading_b": {
+     "slot_order": "current_first",
+     "prior": {
+      "state": "absent",
+      "side": "none",
+      "evidence": "Both lateral costophrenic sulci are sharp and clear. No fluid tracking, layering, blunting, or meniscus sign is identified.",
+      "limitations": [
+       "Overlying breast and soft tissue shadows at the lung bases"
+      ]
+     },
+     "current": {
+      "state": "absent",
+      "side": "none",
+      "evidence": "Both right and left costophrenic angles are sharp and well-defined. There is no meniscus sign, blunting, or pleural fluid tracking along the lateral thoracic wall.",
+      "limitations": [
+       "Overlying breast and soft tissue shadows at the lung bases"
+      ]
+     },
+     "comparability_issues": [],
+     "label": "absent",
+     "trace": {
+      "requested_model": "gemini-3.5-flash",
+      "used_model": "gemini-3.7-flash",
+      "returned_model": "gemini-3.7-flash",
+      "seconds": 30.086,
+      "model_requests": 1,
+      "input_tokens": 2360,
+      "output_tokens": 193
+     }
+    },
+    "consistent": true
+   },
+   "trace": {
+    "model_requests": 2,
+    "requested_model": "gemini-3.5-flash",
+    "returned_model": "gemini-3.6-flash",
+    "seconds": 39.749,
+    "input_tokens": 4720,
+    "output_tokens": 338
+   }
+  },
+  "reports": {
+   "data": {
+    "claims": []
+   },
+   "trace": {
+    "model_requests": 0
+   }
+  },
+  "reassessment": null,
+  "agents": [
+   {
+    "role": "image",
+    "label": "Blind Reader",
+    "tool": "read_pair",
+    "session_id": null,
+    "status": "completed_headless",
+    "seconds": 39.811,
+    "tool_calls": 1,
+    "tool_attempts": 1,
+    "rejected_tool_calls": 0,
+    "tool_trace": {
+     "model_requests": 2,
+     "requested_model": "gemini-3.5-flash",
+     "returned_model": "gemini-3.6-flash",
+     "seconds": 39.749,
+     "input_tokens": 4720,
+     "output_tokens": 338
+    }
+   },
+   {
+    "role": "report",
+    "label": "Report Reader",
+    "tool": "read_reports",
+    "session_id": null,
+    "status": "skipped_no_report",
+    "seconds": 0,
+    "tool_calls": 0,
+    "tool_attempts": 0,
+    "rejected_tool_calls": 0
+   },
+   {
+    "role": "investigator",
+    "label": "Investigator",
+    "tool": "reassess",
+    "session_id": null,
+    "status": "skipped_no_dispute",
+    "seconds": 0,
+    "tool_calls": 0,
+    "tool_attempts": 0,
+    "rejected_tool_calls": 0
+   }
+  ],
+  "verdict": {
+   "finding": "pleural_effusion",
+   "limitations": [
+    "Labels and model readings can be wrong.",
+    "Agent agreement is not a confidence score.",
+    "Research prototype; every flag needs clinician review."
+   ],
+   "status": "image_only",
+   "reading_label": "absent",
+   "order_swap_consistent": true,
+   "summary": "Blind read: absent effusion pattern on both slot orders. No report attached.",
+   "claims": []
+  }
+ },
+ "trace": [
+  {
+   "role": "image",
+   "label": "Blind Reader",
+   "tool": "read_pair",
+   "session_id": null,
+   "status": "completed_headless",
+   "seconds": 39.811,
+   "tool_calls": 1,
+   "tool_attempts": 1,
+   "rejected_tool_calls": 0,
+   "tool_trace": {
+    "model_requests": 2,
+    "requested_model": "gemini-3.5-flash",
+    "returned_model": "gemini-3.6-flash",
+    "seconds": 39.749,
+    "input_tokens": 4720,
+    "output_tokens": 338
+   }
+  },
+  {
+   "role": "report",
+   "label": "Report Reader",
+   "tool": "read_reports",
+   "session_id": null,
+   "status": "skipped_no_report",
+   "seconds": 0,
+   "tool_calls": 0,
+   "tool_attempts": 0,
+   "rejected_tool_calls": 0
+  },
+  {
+   "role": "investigator",
+   "label": "Investigator",
+   "tool": "reassess",
+   "session_id": null,
+   "status": "skipped_no_dispute",
+   "seconds": 0,
+   "tool_calls": 0,
+   "tool_attempts": 0,
+   "rejected_tool_calls": 0
+  }
+ ],
+ "error": null,
+ "created": 1791090304.861776,
+ "updated": 1791090344.6896532,
+ "engine": "headless"
+}

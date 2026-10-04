@@ -1,0 +1,713 @@
+[
+  {
+    "id": "case-A",
+    "slot": "A",
+    "set": "demo",
+    "name": "Case A \u00b7 New effusion",
+    "purpose": "Correct new effusion: NIH PA to PA pair labelled new.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "1",
+    "prior": {
+      "image": "00000001_001.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "Cardiomegaly|Emphysema",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000001_002.png",
+      "order": 2,
+      "view": "PA",
+      "findings": "Cardiomegaly|Effusion",
+      "effusion": true
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "new",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "case-B",
+    "slot": "B",
+    "set": "demo",
+    "name": "Case B \u00b7 AP vs PA abstention",
+    "purpose": "Appropriate abstention: prior PA, current AP. Refusing is the right answer.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "13",
+    "prior": {
+      "image": "00000013_017.png",
+      "order": 42,
+      "view": "PA",
+      "findings": "No Finding",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000013_018.png",
+      "order": 43,
+      "view": "AP",
+      "findings": "Effusion|Infiltration|Pneumothorax",
+      "effusion": true
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "new",
+      "expected_status": "cannot_compare",
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "case-C",
+    "slot": "C",
+    "set": "demo",
+    "name": "Case C \u00b7 Report says no change",
+    "purpose": "Disagreement investigated: same films as Case A with a synthetic report that misses the effusion.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "1",
+    "prior": {
+      "image": "00000001_001.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "Cardiomegaly|Emphysema",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000001_002.png",
+      "order": 2,
+      "view": "PA",
+      "findings": "Cardiomegaly|Effusion",
+      "effusion": true
+    },
+    "reports": [
+      {
+        "scope": "current",
+        "text": "Stable cardiomegaly. No significant interval change. No pleural effusion.",
+        "source": "synthetic",
+        "synthetic": true
+      }
+    ],
+    "truth": {
+      "nih_label": "new",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "case-D",
+    "slot": "D",
+    "set": "demo",
+    "name": "Case D \u00b7 Report agrees",
+    "purpose": "Agreement: NIH pair labelled persistent with a synthetic report consistent with that label.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "61",
+    "prior": {
+      "image": "00000061_002.png",
+      "order": 2,
+      "view": "PA",
+      "findings": "Effusion",
+      "effusion": true
+    },
+    "current": {
+      "image": "00000061_003.png",
+      "order": 3,
+      "view": "PA",
+      "findings": "Effusion|Pleural_Thickening",
+      "effusion": true
+    },
+    "reports": [
+      {
+        "scope": "current",
+        "text": "Persistent pleural effusion, similar to the prior study.",
+        "source": "synthetic",
+        "synthetic": true
+      }
+    ],
+    "truth": {
+      "nih_label": "persistent",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "case-E",
+    "slot": "E",
+    "set": "demo",
+    "name": "Case E \u00b7 Near-duplicate control",
+    "purpose": "Control: one film versus a lightly cropped and brightened copy of itself. A \"new\" call would be an over-call.",
+    "source": "NIH ChestX-ray14 + derived control",
+    "patient_id": "8",
+    "prior": {
+      "image": "00000008_000.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "Cardiomegaly",
+      "effusion": false
+    },
+    "current": {
+      "image": "control_00000008_000_crop_bright.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "Cardiomegaly",
+      "effusion": false,
+      "derived": "Cropped 3% per edge and brightened 8% from 00000008_000.png"
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "absent",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-01",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 01 \u00b7 patient 1",
+    "purpose": "Pilot evaluation pair (new); NIH follow-up 1 to 2.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "1",
+    "prior": {
+      "image": "00000001_001.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "Cardiomegaly|Emphysema",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000001_002.png",
+      "order": 2,
+      "view": "PA",
+      "findings": "Cardiomegaly|Effusion",
+      "effusion": true
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "new",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-02",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 02 \u00b7 patient 5",
+    "purpose": "Pilot evaluation pair (new); NIH follow-up 6 to 7.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "5",
+    "prior": {
+      "image": "00000005_006.png",
+      "order": 6,
+      "view": "PA",
+      "findings": "Infiltration",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000005_007.png",
+      "order": 7,
+      "view": "PA",
+      "findings": "Effusion|Infiltration",
+      "effusion": true
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "new",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-03",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 03 \u00b7 patient 39",
+    "purpose": "Pilot evaluation pair (new); NIH follow-up 3 to 4.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "39",
+    "prior": {
+      "image": "00000039_003.png",
+      "order": 3,
+      "view": "PA",
+      "findings": "No Finding",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000039_004.png",
+      "order": 4,
+      "view": "PA",
+      "findings": "Effusion",
+      "effusion": true
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "new",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-04",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 04 \u00b7 patient 56",
+    "purpose": "Pilot evaluation pair (new); NIH follow-up 0 to 1.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "56",
+    "prior": {
+      "image": "00000056_000.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "Nodule|Pneumonia",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000056_001.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "Effusion",
+      "effusion": true
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "new",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-05",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 05 \u00b7 patient 11",
+    "purpose": "Pilot evaluation pair (resolved); NIH follow-up 0 to 1.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "11",
+    "prior": {
+      "image": "00000011_000.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "Effusion",
+      "effusion": true
+    },
+    "current": {
+      "image": "00000011_001.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "No Finding",
+      "effusion": false
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "resolved",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-06",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 06 \u00b7 patient 23",
+    "purpose": "Pilot evaluation pair (resolved); NIH follow-up 2 to 3.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "23",
+    "prior": {
+      "image": "00000023_002.png",
+      "order": 2,
+      "view": "PA",
+      "findings": "Effusion|Infiltration",
+      "effusion": true
+    },
+    "current": {
+      "image": "00000023_003.png",
+      "order": 3,
+      "view": "PA",
+      "findings": "No Finding",
+      "effusion": false
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "resolved",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-07",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 07 \u00b7 patient 38",
+    "purpose": "Pilot evaluation pair (resolved); NIH follow-up 0 to 1.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "38",
+    "prior": {
+      "image": "00000038_000.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "Cardiomegaly|Effusion",
+      "effusion": true
+    },
+    "current": {
+      "image": "00000038_001.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "Atelectasis|Infiltration",
+      "effusion": false
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "resolved",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-08",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 08 \u00b7 patient 44",
+    "purpose": "Pilot evaluation pair (resolved); NIH follow-up 0 to 1.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "44",
+    "prior": {
+      "image": "00000044_000.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "Consolidation|Effusion|Infiltration",
+      "effusion": true
+    },
+    "current": {
+      "image": "00000044_001.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "Infiltration|Pleural_Thickening",
+      "effusion": false
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "resolved",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-09",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 09 \u00b7 patient 61",
+    "purpose": "Pilot evaluation pair (persistent); NIH follow-up 2 to 3.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "61",
+    "prior": {
+      "image": "00000061_002.png",
+      "order": 2,
+      "view": "PA",
+      "findings": "Effusion",
+      "effusion": true
+    },
+    "current": {
+      "image": "00000061_003.png",
+      "order": 3,
+      "view": "PA",
+      "findings": "Effusion|Pleural_Thickening",
+      "effusion": true
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "persistent",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-10",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 10 \u00b7 patient 84",
+    "purpose": "Pilot evaluation pair (persistent); NIH follow-up 0 to 1.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "84",
+    "prior": {
+      "image": "00000084_000.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "Effusion",
+      "effusion": true
+    },
+    "current": {
+      "image": "00000084_001.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "Effusion",
+      "effusion": true
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "persistent",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-11",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 11 \u00b7 patient 96",
+    "purpose": "Pilot evaluation pair (persistent); NIH follow-up 2 to 3.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "96",
+    "prior": {
+      "image": "00000096_002.png",
+      "order": 2,
+      "view": "PA",
+      "findings": "Effusion",
+      "effusion": true
+    },
+    "current": {
+      "image": "00000096_003.png",
+      "order": 3,
+      "view": "PA",
+      "findings": "Atelectasis|Effusion|Infiltration",
+      "effusion": true
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "persistent",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-12",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 12 \u00b7 patient 99",
+    "purpose": "Pilot evaluation pair (persistent); NIH follow-up 0 to 1.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "99",
+    "prior": {
+      "image": "00000099_000.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "Atelectasis|Effusion",
+      "effusion": true
+    },
+    "current": {
+      "image": "00000099_001.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "Atelectasis|Effusion",
+      "effusion": true
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "persistent",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-13",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 13 \u00b7 patient 1",
+    "purpose": "Pilot evaluation pair (absent); NIH follow-up 0 to 1.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "1",
+    "prior": {
+      "image": "00000001_000.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "Cardiomegaly",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000001_001.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "Cardiomegaly|Emphysema",
+      "effusion": false
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "absent",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-14",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 14 \u00b7 patient 3",
+    "purpose": "Pilot evaluation pair (absent); NIH follow-up 0 to 1.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "3",
+    "prior": {
+      "image": "00000003_001.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "Hernia",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000003_002.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "Hernia",
+      "effusion": false
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "absent",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-15",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 15 \u00b7 patient 8",
+    "purpose": "Pilot evaluation pair (absent); NIH follow-up 0 to 1.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "8",
+    "prior": {
+      "image": "00000008_000.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "Cardiomegaly",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000008_001.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "No Finding",
+      "effusion": false
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "absent",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-16",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 16 \u00b7 patient 22",
+    "purpose": "Pilot evaluation pair (absent); NIH follow-up 0 to 1.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "22",
+    "prior": {
+      "image": "00000022_000.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "No Finding",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000022_001.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "Fibrosis",
+      "effusion": false
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "absent",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-17",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 17 \u00b7 patient 5",
+    "purpose": "Pilot evaluation pair (AP vs PA); NIH follow-up 0 to 1.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "5",
+    "prior": {
+      "image": "00000005_000.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "No Finding",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000005_001.png",
+      "order": 1,
+      "view": "AP",
+      "findings": "No Finding",
+      "effusion": false
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "absent",
+      "expected_status": "cannot_compare",
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-18",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 18 \u00b7 patient 13",
+    "purpose": "Pilot evaluation pair (AP vs PA); NIH follow-up 42 to 43.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "13",
+    "prior": {
+      "image": "00000013_017.png",
+      "order": 42,
+      "view": "PA",
+      "findings": "No Finding",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000013_018.png",
+      "order": 43,
+      "view": "AP",
+      "findings": "Effusion|Infiltration|Pneumothorax",
+      "effusion": true
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "new",
+      "expected_status": "cannot_compare",
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "pilot-19",
+    "slot": null,
+    "set": "pilot",
+    "name": "Pilot 19 \u00b7 patient 11",
+    "purpose": "Pilot evaluation pair (AP vs PA); NIH follow-up 4 to 5.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "11",
+    "prior": {
+      "image": "00000011_004.png",
+      "order": 4,
+      "view": "PA",
+      "findings": "No Finding",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000011_005.png",
+      "order": 5,
+      "view": "AP",
+      "findings": "Infiltration",
+      "effusion": false
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "absent",
+      "expected_status": "cannot_compare",
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  }
+]

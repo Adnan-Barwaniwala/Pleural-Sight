@@ -1,0 +1,112 @@
+{
+ "id": "412ddf5fc035488aa22e7ef75ca2f6fe",
+ "case_id": "case-B",
+ "status": "complete",
+ "stage": "human_review",
+ "result": {
+  "gate": {
+   "comparable": false,
+   "reasons": [
+    "Projection mismatch: prior PA vs current AP. AP films are usually supine or portable, which spreads fluid and magnifies the heart, so a change in effusion cannot be judged reliably."
+   ],
+   "flags": [],
+   "views": {
+    "prior": "PA",
+    "current": "AP"
+   }
+  },
+  "orchestrator": "headless",
+  "status": "needs_human_review",
+  "version": 2,
+  "reading": null,
+  "reports": null,
+  "reassessment": null,
+  "agents": [
+   {
+    "role": "image",
+    "label": "Blind Reader",
+    "tool": "read_pair",
+    "session_id": null,
+    "status": "skipped_gate_failed",
+    "seconds": 0,
+    "tool_calls": 0,
+    "tool_attempts": 0,
+    "rejected_tool_calls": 0
+   },
+   {
+    "role": "report",
+    "label": "Report Reader",
+    "tool": "read_reports",
+    "session_id": null,
+    "status": "skipped_gate_failed",
+    "seconds": 0,
+    "tool_calls": 0,
+    "tool_attempts": 0,
+    "rejected_tool_calls": 0
+   },
+   {
+    "role": "investigator",
+    "label": "Investigator",
+    "tool": "reassess",
+    "session_id": null,
+    "status": "skipped_gate_failed",
+    "seconds": 0,
+    "tool_calls": 0,
+    "tool_attempts": 0,
+    "rejected_tool_calls": 0
+   }
+  ],
+  "verdict": {
+   "finding": "pleural_effusion",
+   "limitations": [
+    "Labels and model readings can be wrong.",
+    "Agent agreement is not a confidence score.",
+    "Research prototype; every flag needs clinician review."
+   ],
+   "status": "cannot_compare",
+   "reading_label": null,
+   "order_swap_consistent": null,
+   "summary": "Comparability gate stopped the run before any model call. Projection mismatch: prior PA vs current AP. AP films are usually supine or portable, which spreads fluid and magnifies the heart, so a change in effusion cannot be judged reliably.",
+   "claims": []
+  }
+ },
+ "trace": [
+  {
+   "role": "image",
+   "label": "Blind Reader",
+   "tool": "read_pair",
+   "session_id": null,
+   "status": "skipped_gate_failed",
+   "seconds": 0,
+   "tool_calls": 0,
+   "tool_attempts": 0,
+   "rejected_tool_calls": 0
+  },
+  {
+   "role": "report",
+   "label": "Report Reader",
+   "tool": "read_reports",
+   "session_id": null,
+   "status": "skipped_gate_failed",
+   "seconds": 0,
+   "tool_calls": 0,
+   "tool_attempts": 0,
+   "rejected_tool_calls": 0
+  },
+  {
+   "role": "investigator",
+   "label": "Investigator",
+   "tool": "reassess",
+   "session_id": null,
+   "status": "skipped_gate_failed",
+   "seconds": 0,
+   "tool_calls": 0,
+   "tool_attempts": 0,
+   "rejected_tool_calls": 0
+  }
+ ],
+ "error": null,
+ "created": 1791090184.066679,
+ "updated": 1791090184.1032732,
+ "engine": "headless"
+}

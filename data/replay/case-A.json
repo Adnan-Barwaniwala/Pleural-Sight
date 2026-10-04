@@ -1,0 +1,216 @@
+{
+ "id": "67a85a270add4765a49b7ee4bf506af3",
+ "case_id": "case-A",
+ "status": "complete",
+ "stage": "human_review",
+ "result": {
+  "gate": {
+   "comparable": true,
+   "reasons": [],
+   "flags": [],
+   "views": {
+    "prior": "PA",
+    "current": "PA"
+   }
+  },
+  "orchestrator": "headless",
+  "status": "needs_human_review",
+  "version": 2,
+  "reading": {
+   "data": {
+    "reading_a": {
+     "slot_order": "prior_first",
+     "prior": {
+      "state": "absent",
+      "side": "none",
+      "evidence": "Both the right and left lateral costophrenic angles are sharp and deep, with no evidence of pleural fluid, meniscus formation, or lateral tracking.",
+      "limitations": [
+       "Slightly shallow inspiration but sufficient to clear the lung bases and costophrenic angles"
+      ]
+     },
+     "current": {
+      "state": "present",
+      "side": "bilateral",
+      "evidence": "There is blunting of both lateral costophrenic angles, more pronounced on the left with a subtle meniscus sign, consistent with bilateral pleural effusions (often seen post-sternotomy, with surgical wires visible).",
+      "limitations": [
+       "Poor inspiration with elevated diaphragms",
+       "Overlying soft tissues and subsegmental atelectasis obscuring the bases"
+      ]
+     },
+     "comparability_issues": [
+      "Post-surgical changes present in Film 2 (median sternotomy wires) but absent in Film 1",
+      "Markedly different degree of inspiration/lung volume",
+      "Differences in patient positioning and radiographic exposure"
+     ],
+     "label": "new",
+     "trace": {
+      "requested_model": "gemini-3.5-flash",
+      "used_model": "gemini-3.5-flash",
+      "returned_model": "gemini-3.5-flash",
+      "seconds": 9.149,
+      "model_requests": 1,
+      "input_tokens": 2360,
+      "output_tokens": 277
+     }
+    },
+    "reading_b": {
+     "slot_order": "current_first",
+     "prior": {
+      "state": "absent",
+      "side": "none",
+      "evidence": "Both the right and left costophrenic angles are sharp, clear, and well-visualized without any blunting, meniscus signs, or pleural fluid tracking.",
+      "limitations": [
+       "Mild rotation"
+      ]
+     },
+     "current": {
+      "state": "uncertain",
+      "side": "left",
+      "evidence": "The right costophrenic angle appears sharp. The left costophrenic angle and left hemidiaphragm are obscured by cardiomegaly and overlying basilar opacity/atelectasis, making it difficult to definitively confirm or exclude a small pleural effusion.",
+      "limitations": [
+       "Low lung volumes / poor inspiration",
+       "Overlying cardiomegaly",
+       "Post-surgical changes including sternal wires"
+      ]
+     },
+     "comparability_issues": [
+      "Presence of sternal wires in Film 1 which are absent in Film 2",
+      "Different degrees of inspiration and lung volumes between the two studies",
+      "Difference in projection and cardiac silhouette size"
+     ],
+     "label": "indeterminate",
+     "trace": {
+      "requested_model": "gemini-3.5-flash",
+      "used_model": "gemini-3.5-flash",
+      "returned_model": "gemini-3.5-flash",
+      "seconds": 12.116,
+      "model_requests": 1,
+      "input_tokens": 2360,
+      "output_tokens": 271
+     }
+    },
+    "consistent": false
+   },
+   "trace": {
+    "model_requests": 2,
+    "requested_model": "gemini-3.5-flash",
+    "returned_model": "gemini-3.5-flash",
+    "seconds": 12.116,
+    "input_tokens": 4720,
+    "output_tokens": 548
+   }
+  },
+  "reports": {
+   "data": {
+    "claims": []
+   },
+   "trace": {
+    "model_requests": 0
+   }
+  },
+  "reassessment": null,
+  "agents": [
+   {
+    "role": "image",
+    "label": "Blind Reader",
+    "tool": "read_pair",
+    "session_id": null,
+    "status": "completed_headless",
+    "seconds": 12.767,
+    "tool_calls": 1,
+    "tool_attempts": 1,
+    "rejected_tool_calls": 0,
+    "tool_trace": {
+     "model_requests": 2,
+     "requested_model": "gemini-3.5-flash",
+     "returned_model": "gemini-3.5-flash",
+     "seconds": 12.116,
+     "input_tokens": 4720,
+     "output_tokens": 548
+    }
+   },
+   {
+    "role": "report",
+    "label": "Report Reader",
+    "tool": "read_reports",
+    "session_id": null,
+    "status": "skipped_no_report",
+    "seconds": 0,
+    "tool_calls": 0,
+    "tool_attempts": 0,
+    "rejected_tool_calls": 0
+   },
+   {
+    "role": "investigator",
+    "label": "Investigator",
+    "tool": "reassess",
+    "session_id": null,
+    "status": "skipped_no_dispute",
+    "seconds": 0,
+    "tool_calls": 0,
+    "tool_attempts": 0,
+    "rejected_tool_calls": 0
+   }
+  ],
+  "verdict": {
+   "finding": "pleural_effusion",
+   "limitations": [
+    "Labels and model readings can be wrong.",
+    "Agent agreement is not a confidence score.",
+    "Research prototype; every flag needs clinician review."
+   ],
+   "status": "unstable",
+   "reading_label": null,
+   "order_swap_consistent": false,
+   "summary": "The answer flipped when the films swapped slots (Reading A: new, Reading B: indeterminate). Read this case manually.",
+   "claims": []
+  }
+ },
+ "trace": [
+  {
+   "role": "image",
+   "label": "Blind Reader",
+   "tool": "read_pair",
+   "session_id": null,
+   "status": "completed_headless",
+   "seconds": 12.767,
+   "tool_calls": 1,
+   "tool_attempts": 1,
+   "rejected_tool_calls": 0,
+   "tool_trace": {
+    "model_requests": 2,
+    "requested_model": "gemini-3.5-flash",
+    "returned_model": "gemini-3.5-flash",
+    "seconds": 12.116,
+    "input_tokens": 4720,
+    "output_tokens": 548
+   }
+  },
+  {
+   "role": "report",
+   "label": "Report Reader",
+   "tool": "read_reports",
+   "session_id": null,
+   "status": "skipped_no_report",
+   "seconds": 0,
+   "tool_calls": 0,
+   "tool_attempts": 0,
+   "rejected_tool_calls": 0
+  },
+  {
+   "role": "investigator",
+   "label": "Investigator",
+   "tool": "reassess",
+   "session_id": null,
+   "status": "skipped_no_dispute",
+   "seconds": 0,
+   "tool_calls": 0,
+   "tool_attempts": 0,
+   "rejected_tool_calls": 0
+  }
+ ],
+ "error": null,
+ "created": 1791090272.656004,
+ "updated": 1791090285.468793,
+ "engine": "headless"
+}
