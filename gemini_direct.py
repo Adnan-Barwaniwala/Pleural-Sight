@@ -98,8 +98,9 @@ class BaselineLabel(Strict):
 
 def configuration():
     keys = api_keys()
-    primary = _setting('TIMELENS_GEMINI_MODEL') or 'gemini-3.5-flash'
-    fallbacks = _setting('TIMELENS_GEMINI_FALLBACKS') or 'gemini-3.7-flash,gemini-3.6-flash,gemini-3.8-flash'
+    primary = _setting('TIMELENS_GEMINI_MODEL') or 'gemini-3.5-flash-lite'
+    # Each model has its own daily quota, so a quota refusal moves to the next model.
+    fallbacks = _setting('TIMELENS_GEMINI_FALLBACKS') or 'gemini-3.5-flash,gemini-3.7-flash,gemini-3.6-flash,gemini-3.8-flash,gemini-3.1-flash-lite'
     models = [primary] + [m.strip() for m in fallbacks.split(',') if m.strip() and m.strip() != primary]
     if not all(re.fullmatch(r'[A-Za-z0-9._-]+', m) for m in models):
         raise ModelError('Invalid TIMELENS_GEMINI_MODEL or TIMELENS_GEMINI_FALLBACKS.')

@@ -20,6 +20,7 @@ from openswarm_workflow import OpenSwarmError
 from gemini_direct import ModelError, api_key
 from swarm_api import call as swarm_call
 import verdict
+import ui_adapter
 
 ROOT = Path(__file__).parent
 RUNTIME = ROOT/'runtime'
@@ -200,7 +201,7 @@ def state():
         message = 'OpenSwarm is not reachable. Start the OpenSwarm app, or run cases with the headless runner.'
     else:
         message = 'Gemini API key is missing. Add GEMINI_API_KEY to the local .env file. Cached replays remain available.'
-    return {'cases':cases(), 'integration':{'ready':key_ready and swarm_ready,'openswarm':swarm_ready,
+    return {'cases':[ui_adapter.case(item) for item in cases()], 'integration':{'ready':key_ready and swarm_ready,'openswarm':swarm_ready,
             'gemini':key_ready,'message':message},
             'status_order':verdict.STATUS_ORDER, 'status_text':verdict.STATUS_TEXT,
             'provenance':json.loads((ROOT/'data/provenance.json').read_text())}
@@ -286,11 +287,12 @@ async def run(request: Request):
         c.execute('INSERT INTO runs (id,case_id,status,stage,result,trace,error,created,updated,engine) VALUES (?,?,?,?,?,?,?,?,?,?)',
                   (rid,selected['id'],'queued','queued',None,'[]',None,now,now,engine))
     retain_task(rid,asyncio.create_task(process_run(rid,manifest_path,engine)))
-    return run_record(rid)
+    return ui_adapter.run(run_record(rid),selected)
 
 @app.get('/api/runs/{run_id}')
 def get_run(run_id: str):
-    return run_record(run_id)
+    record = run_record(run_id)
+    return ui_adapter.run(record,case(record['case_id']))
 
 @app.post('/api/signoffs')
 async def signoff(request: Request):

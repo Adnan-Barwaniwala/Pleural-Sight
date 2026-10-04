@@ -2,56 +2,48 @@
 
 ## Before you present
 
-1. Start OpenSwarm and confirm you are signed in (Settings → subscriptions shows Antigravity / Gemini 3.8 Flash).
-2. `.env` contains `GEMINI_API_KEY=...`. **Enable billing on the key's project** (AI Studio → API keys → Set up billing). Google AI Pro does not raise API limits, and a free-tier key allows only 20 requests per model per day (one live case uses 3–4). Rehearse freely: repeated runs of the same case are served from the local cache (trace: *cached response*). For the one fresh on-stage run of Case C, set `TIMELENS_RESPONSE_CACHE=0`, or simply run a case you haven't run before.
-3. Start the app: `.venv\Scripts\python server.py`, then open http://127.0.0.1:8765. If the port is busy, run `$env:TIMELENS_PORT=8766` first.
-4. Refresh the cached demo results from real live runs:
-   `.venv\Scripts\python scripts\build_replay.py --engine openswarm --all-demo`
-5. Optional, needs about 100 Gemini calls: `.venv\Scripts\python scripts\run_eval.py`. The results then appear on the **Evaluation** page.
+1. Open OpenSwarm and make sure you are signed in.
+2. Make sure `.env` contains `GEMINI_API_KEY=...`.
+3. Start the app with `.venv\Scripts\python server.py` and open http://127.0.0.1:8765. If that port is busy, run `$env:TIMELENS_PORT=8766` first and use 8766.
+4. The top card should say **Ready to compare**.
 
-The connection card should say **Live**. The top bar should read *OpenSwarm connected · Gemini key set*.
+## Avoiding rate limits
 
-## Three-minute script (from the build spec)
+- The app uses **Gemini 3.5 Flash-Lite** first. If that model is out of requests, it moves through the other Gemini models automatically.
+- On a free API key, each model allows about 20 requests a day. One comparison uses 2 requests, or 3–4 with a report.
+- **Running the same case again costs nothing.** The saved answer is reused. Rehearse on the same cases you will show.
+- For a fresh answer on stage, either pick a case you have not run yet, or start the server with `$env:TIMELENS_RESPONSE_CACHE=0`.
+- **To remove the limit completely,** turn on billing for the API key. Go to aistudio.google.com → API keys → Set up billing. It costs well under a cent per comparison.
+- **Extra keys:** add keys from teammates' own Google accounts as `GEMINI_API_KEYS=key1,key2` in `.env`. Each one adds its own daily allowance.
+
+## Three-minute demo
 
 | Time | Show | Say |
 |---|---|---|
-| 0:00–0:25 | Worklist | "Readers skip priors, and prior reports anchor them. Radiology calls this *satisfaction of report*. TimeLens reads the images before it may see the report." |
-| 0:25–1:00 | **Case A** → Flicker | Flick the films. Point at Reading A vs Reading B: the same films, read twice with their slots swapped. |
-| 1:00–1:30 | **Case B** | *Cannot compare*: prior PA, current AP. "Refusing here is the right answer — and no model was even called." |
-| 1:30–2:25 | **Case C** → *Run live in OpenSwarm* | Switch to OpenSwarm: a **Blind Reader** card and a **Report Reader** card appear in parallel, each with exactly one tool. If they disagree, an **Investigator** card makes one targeted second look. Back in TimeLens, review the result and click **Approve** or **Override**. |
-| 2:25–3:00 | Evaluation / About | The limits, then the pitch line. |
+| 0:00–0:25 | The workspace | "Doctors often compare a new X-ray with the old one, and an earlier written report can sway them. TimeLens looks at the images before it ever reads the report." |
+| 0:25–1:00 | **Case D**: Compare studies, then Flicker | "Fluid on both X-rays, and the report agrees." Flick between the two images. |
+| 1:00–1:30 | **Case B**: Compare studies | "These two X-rays were taken from different sides, so TimeLens refuses to compare them. That's the right answer." |
+| 1:30–2:25 | **Case C**: Compare studies, live, with OpenSwarm open beside it | Show the image reviewer and report reviewer appearing in OpenSwarm. If the images and report disagree, a third agent takes one more focused look. Then open View evidence. |
+| 2:25–3:00 | Wrap up | It's a second reader, not a diagnosis. Every result needs a person to review it. |
 
-## What to test, and what you should see
+## What to test and what you should see
 
-| # | Do this | Expected output |
+| # | Do this | You should see |
 |---|---|---|
-| 1 | Open the app | Demo worklist sorted: Disagreement → Cannot compare → Unstable → Image only → Agrees. Each item shows a status and, if cached, *replay*. |
-| 2 | Click **Case B** | Hero "These films cannot be compared reliably", with the projection-mismatch reason. Trace shows all three agents *skipped gate failed*: zero model calls. |
-| 3 | Case B → **Run live** | Finishes in about a second with *Cannot compare*. No OpenSwarm agent is launched. |
-| 4 | **Case C** → **Run live in OpenSwarm** | Progress stages: gate ✓ → launching → Blind Reader → Report Reader → (Investigator) → status. OpenSwarm shows sessions named *TimeLens · Blind Reader · Case C…* and *TimeLens · Report Reader · Case C…*. |
-| 5 | When Case C completes | One of: **Disagreement** (blind read sees new fluid; the synthetic report says none; the Investigator re-checked), **Agrees** (the reader missed the effusion, which the NIH reference label in *Source, provenance* reveals), or **Unstable read** (the two slot orders disagreed). All three are honest outcomes. The report quote is highlighted, and the trace lists each agent's session ID, tool, time, model and tokens. |
-| 6 | **Case E** | The near-duplicate control should be *Image only · absent*. A "new" call would be an over-call. |
-| 7 | **Approve** / **Escalate** | The sign-off line updates with time and source (live or replay). The worklist item shows the action. |
-| 8 | **Override…** with "no" | Rejected: "An override needs a reason of at least five characters." |
-| 9 | Image desk: Zoom +, drag, Sync, Flicker, Swipe | Synced pan/zoom across both films. Flicker alternates every 0.7 s. The swipe slider reveals earlier/current. |
-| 10 | Rail → **Pilot** | 19 NIH pilot pairs. Run any of them **headless** to see the same tools without agents. |
-| 11 | **New comparison** | Upload two PNG/JPEGs and set the views to PA and AP → the case is gated *Cannot compare*. Set PA/PA plus a pasted report → a normal run. |
-| 12 | Stop OpenSwarm, reload | The badge reads *Headless only*. Live runs return a clear 503 message; headless still works. |
-| 13 | `.venv\Scripts\python -m pytest -q` | 25 passed. |
+| 1 | Open the app | A case list on the left (Case A–E, then Pilot 01–19) and "Ready to compare". |
+| 2 | **Case B** → Compare studies | Done in about a second: "Change could not be determined", explaining that the earlier X-ray was taken from the back (PA) and the current one from the front (AP). No AI calls are made. |
+| 3 | **Case D** → Compare studies | After about a minute: fluid on both images. The written report card says "Sources agree" if the AI saw the fluid. |
+| 4 | **Case C** → Compare studies | Images and report are reviewed separately. If the AI sees new fluid, the report card says **"Sources disagree"** and the summary mentions the second, focused look. If the AI sees no fluid, the cards agree. The NIH label for this pair is "new fluid", so that would be an AI miss. |
+| 5 | **Case E** → Compare studies | "No fluid detected in either study". The second image is just an edited copy of the first. |
+| 6 | Any case → Compare studies again | Instant result: the saved answer is reused and no new AI request is made. |
+| 7 | While a case runs | Steps tick through: Preparing, Starting review, Reviewing images, Reviewing reports, Comparing findings, Preparing results. |
+| 8 | Image controls: zoom +/−, drag, Side by side / Flicker / Swipe, full screen | Both images zoom and move together. Flicker and Swipe help spot changes. |
+| 9 | **New comparison** | Upload two PNG or JPEG X-rays, tick both boxes, optionally paste a report, and save. It appears in the list, ready to compare. |
+| 10 | Close OpenSwarm and reload | The top card shows that setup is needed, and Compare studies is disabled. |
+| 11 | `.venv\Scripts\python -m pytest -q` and `node --test tests/test_ui_progress.cjs` | 29 passed and 1 passed. |
 
-## Statuses
+## Short answers for judges
 
-| Status | Meaning | Clinician action |
-|---|---|---|
-| Disagreement | A stable blind read contradicts the report, even after one reassessment | Review first |
-| Cannot compare | The gate failed (AP vs PA, identical files), or the reader abstained | Read manually |
-| Unstable read | The answer flipped when the films swapped slots | Read manually |
-| Image only | No report, or no definite report claim | Read the result |
-| Agrees with report | The blind read matches the report | Spot-check |
-
-## Judge Q&A, short answers
-
-- **Isn't this just an LLM looking at X-rays?** The reader is structurally blind to the report: its MCP connector exposes one tool, and the report text never reaches it.
-- **Why several agents?** Each sees different information. Blinding is enforced by what each tool can access, and the evaluation compares against one strong prompt (condition B).
-- **How accurate?** A pilot of 19 pairs, roughly ±20 points. It is a review aid, not a diagnosis.
-- **Why OpenSwarm?** Visible agents, per-agent tool restriction, and a canvas the clinician can watch. Every connector is per-run and deleted afterwards.
+- **Isn't this just AI reading an X-ray?** The image reviewer never sees the written report. Each OpenSwarm agent gets access to one task only.
+- **Why several agents?** Each one sees different information. That separation is the point, and you can watch it in OpenSwarm.
+- **How accurate is it?** It hasn't been clinically validated. It's a review aid, and every result needs a person.

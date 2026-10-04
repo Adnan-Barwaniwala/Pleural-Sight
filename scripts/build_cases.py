@@ -19,11 +19,11 @@ SYNTHETIC_C = 'Stable cardiomegaly. No significant interval change. No pleural e
 SYNTHETIC_D = 'Persistent pleural effusion, similar to the prior study.'
 
 DEMO = [
-    ('case-A', 'A', 'New effusion', 'Correct new effusion: NIH PA to PA pair labelled new.', '00000001_001.png', '00000001_002.png', None),
-    ('case-B', 'B', 'AP vs PA abstention', 'Appropriate abstention: prior PA, current AP. Refusing is the right answer.', '00000013_017.png', '00000013_018.png', None),
-    ('case-C', 'C', 'Report says no change', 'Disagreement investigated: same films as Case A with a synthetic report that misses the effusion.', '00000001_001.png', '00000001_002.png', SYNTHETIC_C),
-    ('case-D', 'D', 'Report agrees', 'Agreement: NIH pair labelled persistent with a synthetic report consistent with that label.', '00000061_002.png', '00000061_003.png', SYNTHETIC_D),
-    ('case-E', 'E', 'Near-duplicate control', 'Control: one film versus a lightly cropped and brightened copy of itself. A "new" call would be an over-call.', '00000008_000.png', CONTROL, None),
+    ('case-A', 'A', 'New fluid', 'NIH labels: no fluid on the earlier X-ray, fluid on the current one. Both taken from the back (PA).', '00000001_001.png', '00000001_002.png', None),
+    ('case-B', 'B', 'Different X-ray views', 'The earlier X-ray was taken from the back (PA) and the current one from the front (AP), so they should not be compared.', '00000013_017.png', '00000013_018.png', None),
+    ('case-C', 'C', 'Report says no fluid', 'Same X-rays as Case A, plus a written report made up for this demo that says there is no fluid.', '00000001_001.png', '00000001_002.png', SYNTHETIC_C),
+    ('case-D', 'D', 'Report agrees', 'NIH labels: fluid on both X-rays, plus a demo report that says the fluid is still there.', '00000061_002.png', '00000061_003.png', SYNTHETIC_D),
+    ('case-E', 'E', 'Edited copy', 'The current image is a slightly cropped and brightened copy of the earlier one, so nothing should change.', '00000008_000.png', CONTROL, None),
 ]
 PILOT = [
     ('00000001_001.png', '00000001_002.png'), ('00000005_006.png', '00000005_007.png'),
@@ -84,9 +84,9 @@ def main():
     cases = [case(cid, f'Case {slot} · {title}', purpose, p, c, r, slot) for cid, slot, title, purpose, p, c, r in DEMO]
     for i, (p, c) in enumerate(PILOT, 1):
         prior, current = film(p), film(c)
-        kind = 'AP vs PA' if prior['view'] != current['view'] else label(prior, current)
+        kind = 'different views' if prior['view'] != current['view'] else 'NIH label: ' + label(prior, current)
         cases.append(case(f'pilot-{i:02}', f'Pilot {i:02} · patient {int(META[p]["Patient ID"])}',
-                          f'Pilot evaluation pair ({kind}); NIH follow-up {prior["order"]} to {current["order"]}.',
+                          f'NIH test pair ({kind}), follow-up {prior["order"]} to {current["order"]}.',
                           p, c, None, case_set='pilot'))
     (ROOT/'data'/'cases.json').write_text(json.dumps(cases, indent=2))
     print(len(cases), 'cases written')

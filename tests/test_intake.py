@@ -117,7 +117,7 @@ def test_run_endpoint_persists_result_and_progress(client, monkeypatch):
     assert response.status_code == 202, response.text
     saved = wait(client, response.json()['id'])
     assert saved['status'] == 'complete' and saved['result']['version'] == 2
-    assert saved['progress'] == {'read_pair': 'waiting', 'read_reports': 'waiting', 'reassess': 'waiting'}
+    assert saved['progress'] == {'assess_images': 'waiting', 'read_reports': 'waiting'}
     case = next(c for c in client.get('/api/state').json()['cases'] if c['id'] == 'case-A')
     assert case['last_run']['id'] == saved['id'] and case['status'] == 'image_only'
 
@@ -361,7 +361,7 @@ def test_openswarm_failure_stops_run_without_fallback(client, monkeypatch):
     assert response.status_code == 202
     saved = wait(client, response.json()['id'])
     assert saved['status'] == 'failed' and saved['result'] is None
-    assert saved['error'] == 'Blind Reader failed in OpenSwarm.'
+    assert saved['error'] == 'Image review failed in OpenSwarm.'
 
 
 def test_quota_rotates_through_key_pool_then_reports_clearly(monkeypatch):
@@ -401,3 +401,38 @@ def test_identical_request_is_served_from_cache(monkeypatch, tmp_path):
     monkeypatch.setenv('TIMELENS_RESPONSE_CACHE', '0')
     asyncio.run(gemini_direct.baseline_naive(png(), png()))
     assert len(calls) == 2
+
+
+def test_ui_adapter_shapes_results_for_workspace_ui():
+    import ui_adapter
+    item = {'id': 'case-C', 'reports': [{'scope': 'current', 'text': 'No pleural effusion.', 'synthetic': True}],
+            'prior': {'image': 'a.png'}, 'current': {'image': 'b.png'}, 'purpose': 'demo'}
+    stored = {'gate': GATE_OK, 'reading': {'data': READING}, 'agents': [{'role': 'investigator', 'status': 'completed'}],
+              'reports': {'data': {'claims': [{'report_index': 0, 'state': 'absent', 'quote': 'No pleural effusion.'}]}},
+              'reassessment': {'data': {'label': 'new'}}, 'verdict': {'status': 'disagreement', 'claims': []}}
+    shown = ui_adapter.result(stored, item)
+    assert shown['initial']['data']['current']['state'] == 'present'
+    assert shown['comparison']['transition'] == 'new'
+    assert shown['comparison']['claims'][0]['verdict'] == 'contradiction'
+    assert 'second, focused look' in shown['comparison']['note']
+    unstable = copy.deepcopy(READING)
+    unstable['reading_b']['current']['state'] = 'absent'; unstable['consistent'] = False
+    shown = ui_adapter.result({**stored, 'reading': {'data': unstable}, 'reassessment': None,
+                               'verdict': {'status': 'unstable', 'claims': []}}, item)
+    assert shown['initial']['data']['current']['state'] == 'not_assessable'
+    assert shown['comparison']['transition'] == 'indeterminate'
+    assert shown['comparison']['claims'][0]['verdict'] == 'uncertainty'
+    gated = ui_adapter.result({'gate': {'comparable': False, 'reasons': ['x'], 'views': {'prior': 'PA', 'current': 'AP'}},
+                               'reading': None, 'agents': [{'role': 'image', 'status': 'skipped_gate_failed'}],
+                               'verdict': {'status': 'cannot_compare', 'claims': []}}, {**item, 'reports': []})
+    assert 'from the front (AP)' in gated['comparison']['note'] and gated['agents'][0]['status'] == 'Not needed'
+    for text in (json.dumps(gated), json.dumps(shown)):
+        for jargon in ('Blind Reader', 'order-swap', 'gate', 'slot'):
+            assert jargon not in text.replace('"gate"', '')
+
+
+def test_state_uses_workspace_ui_case_shape(client):
+    items = client.get('/api/state').json()['cases']
+    a = next(c for c in items if c['id'] == 'case-A')
+    assert a['prior'] == '00000001_001.png' and a['current'] == '00000001_002.png'
+    assert a['assertions'] and a['name'] == 'Case A · New fluid'

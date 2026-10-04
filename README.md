@@ -18,8 +18,8 @@ Open http://127.0.0.1:8765. If port 8765 is taken, set `TIMELENS_PORT=8766` firs
 | Variable | Default | Purpose |
 |---|---|---|
 | `GEMINI_API_KEY` | — | Direct Gemini calls made inside the MCP tools |
-| `TIMELENS_GEMINI_MODEL` | `gemini-3.5-flash` | Vision/text model |
-| `TIMELENS_GEMINI_FALLBACKS` | `gemini-3.7-flash,gemini-3.6-flash,gemini-3.8-flash` | Used only on 429/503 capacity errors; the model that answered is shown in the trace |
+| `TIMELENS_GEMINI_MODEL` | `gemini-3.5-flash-lite` | Vision/text model |
+| `TIMELENS_GEMINI_FALLBACKS` | `gemini-3.5-flash,gemini-3.7-flash,gemini-3.6-flash,gemini-3.8-flash,gemini-3.1-flash-lite` | Used only on 429/503 capacity errors; the model that answered is shown in the trace |
 | `TIMELENS_OPENSWARM_MODEL` | `gemini-3.8-flash` | Model that drives the OpenSwarm agents |
 | `GEMINI_API_KEYS` | — | Optional comma-separated pool (keys from different Cloud projects), rotated on 429 |
 | `TIMELENS_RESPONSE_CACHE` | `1` | Identical requests reuse the stored answer (trace shows *cached response*); set `0` for a fresh live call |
@@ -48,7 +48,8 @@ Each agent gets a fresh per-run MCP connector exposing exactly **one** no-argume
 | `analysis_mcp.py` | Run-bound, role-restricted MCP tools |
 | `gemini_direct.py` | Tool-free Gemini calls (swapped blind read, reassessment, report extraction, eval baselines) |
 | `verdict.py` / `cases.py` | Status rules / case catalog and comparability gate |
-| `static/` | Web UI (worklist rail, image desk with sync/flicker/swipe, review, sign-off, Evaluation, About) |
+| `static/` | Workspace UI (case list, synced image viewer with side-by-side/flicker/swipe, live progress, evidence cards) |
+| `ui_adapter.py` | Presents pipeline results to the UI in plain language |
 
 ## Data
 
@@ -59,7 +60,6 @@ Demo slots: **A** new effusion (PA→PA) · **B** AP vs PA (expected *Cannot com
 ## Replay and evaluation
 
 ```powershell
-.venv\Scripts\python scripts\build_replay.py --engine openswarm --all-demo   # cache demo results (Replay tag)
 .venv\Scripts\python scripts\run_eval.py                                     # Evaluation page data
 .venv\Scripts\python -m pytest -q
 ```
