@@ -39,7 +39,7 @@ async def evaluate(case):
                       case['prior']['view'], case['current']['view'])
     a, b = await asyncio.gather(guarded(gemini.baseline_naive(prior, current)), guarded(gemini.baseline_strong(prior, current)))
     row = {'id': case['id'], 'truth': case['truth']['nih_label'], 'ap_pa': not gate['comparable'],
-           'control': case['id'] == 'case-E',
+           'control': case['id'] == 'control',
            'A': a.get('data', {}).get('label', 'error'), 'B': b.get('data', {}).get('label', 'error')}
     if not gate['comparable']:
         row.update(C='cannot_compare', consistent=None, reading=None)
@@ -120,8 +120,7 @@ def summarize(rows, condition, name):
 
 
 async def main():
-    catalog = cases.catalog()
-    pilot = [c for c in catalog if c['set'] == 'pilot'] + [c for c in catalog if c['id'] == 'case-E']
+    pilot = json.loads((ROOT/'data'/'pilot_cases.json').read_text())
     started = time.time()
     rows = await asyncio.gather(*(evaluate(c) for c in pilot))
     anchor = await anchoring(rows, pilot)

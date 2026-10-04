@@ -84,19 +84,19 @@ def test_report_text_and_scanned_pdf():
 
 def test_live_runs_need_key_and_openswarm(client):
     assert client.get('/api/state').json()['integration']['ready'] is False
-    assert client.post('/api/runs', json={'case_id': 'case-A'}, headers=POST).status_code == 503
-    assert client.post('/api/runs', json={'case_id': 'case-A', 'engine': 'headless'}, headers=POST).status_code == 503
+    assert client.post('/api/runs', json={'case_id': 'case-1'}, headers=POST).status_code == 503
+    assert client.post('/api/runs', json={'case_id': 'case-1', 'engine': 'headless'}, headers=POST).status_code == 503
 
 
 def test_catalog_has_demo_slots_and_hides_truth(client):
     items = client.get('/api/state').json()['cases']
     ids = [c['id'] for c in items]
-    for slot in 'ABCDE':
-        assert 'case-'+slot in ids
+    assert ids == ['case-1', 'case-2', 'case-3', 'case-4']
     assert all('truth' not in c for c in items)
-    b = next(c for c in items if c['id'] == 'case-B')
+    b = next(c for c in items if c['id'] == 'case-3')
     assert b['gate']['comparable'] is False and 'Projection mismatch' in b['gate']['reasons'][0]
-    assert next(c for c in items if c['id'] == 'case-C')['reports'][0]['synthetic'] is True
+    assert [r['scope'] for r in next(c for c in items if c['id'] == 'case-4')['reports']] == ['prior', 'current']
+    assert next(c for c in items if c['id'] == 'case-2')['reports'] == []
 
 
 def test_run_endpoint_persists_result_and_progress(client, monkeypatch):
@@ -107,30 +107,30 @@ def test_run_endpoint_persists_result_and_progress(client, monkeypatch):
 
     async def fake_execute(path, progress=None):
         manifest = json.loads(path.read_text())
-        assert Path(manifest['prior']).name == '00000001_001.png'
+        assert Path(manifest['prior']).name == '00000078_000.png'
         assert 'truth' not in manifest and manifest['gate']['comparable'] is True
         if progress:
             progress('finalizing')
         return result
     monkeypatch.setattr(server, 'execute_workflow', fake_execute)
-    response = client.post('/api/runs', json={'case_id': 'case-A'}, headers=POST)
+    response = client.post('/api/runs', json={'case_id': 'case-1'}, headers=POST)
     assert response.status_code == 202, response.text
     saved = wait(client, response.json()['id'])
     assert saved['status'] == 'complete' and saved['result']['version'] == 2
     assert saved['progress'] == {'assess_images': 'waiting', 'read_reports': 'waiting'}
-    case = next(c for c in client.get('/api/state').json()['cases'] if c['id'] == 'case-A')
+    case = next(c for c in client.get('/api/state').json()['cases'] if c['id'] == 'case-1')
     assert case['last_run']['id'] == saved['id'] and case['status'] == 'image_only'
 
 
 def test_signoff_requires_result_and_override_reason(client):
-    assert client.post('/api/signoffs', json={'case_id': 'case-A', 'action': 'approve'}, headers=POST).status_code == 409
+    assert client.post('/api/signoffs', json={'case_id': 'case-1', 'action': 'approve'}, headers=POST).status_code == 409
     server.REPLAY.mkdir()
-    (server.REPLAY/'case-A.json').write_text(json.dumps({'id': 'r', 'case_id': 'case-A', 'status': 'complete',
+    (server.REPLAY/'case-1.json').write_text(json.dumps({'id': 'r', 'case_id': 'case-1', 'status': 'complete',
         'result': {'verdict': {'status': 'disagreement'}}, 'created': 1, 'updated': 1, 'engine': 'openswarm'}))
-    assert client.post('/api/signoffs', json={'case_id': 'case-A', 'action': 'override', 'reason': 'no'}, headers=POST).status_code == 422
-    ok = client.post('/api/signoffs', json={'case_id': 'case-A', 'action': 'override', 'reason': 'Effusion is new on the left.'}, headers=POST)
+    assert client.post('/api/signoffs', json={'case_id': 'case-1', 'action': 'override', 'reason': 'no'}, headers=POST).status_code == 422
+    ok = client.post('/api/signoffs', json={'case_id': 'case-1', 'action': 'override', 'reason': 'Effusion is new on the left.'}, headers=POST)
     assert ok.status_code == 200 and ok.json()['source'] == 'replay' and ok.json()['status'] == 'disagreement'
-    case = next(c for c in client.get('/api/state').json()['cases'] if c['id'] == 'case-A')
+    case = next(c for c in client.get('/api/state').json()['cases'] if c['id'] == 'case-1')
     assert case['signoff']['action'] == 'override' and case['replay']['replay'] is True
 
 
@@ -357,7 +357,7 @@ def test_openswarm_failure_stops_run_without_fallback(client, monkeypatch):
     async def fail(path, progress=None):
         raise openswarm_workflow.OpenSwarmError('Blind Reader failed in OpenSwarm.')
     monkeypatch.setattr(server, 'execute_workflow', fail)
-    response = client.post('/api/runs', json={'case_id': 'case-A'}, headers=POST)
+    response = client.post('/api/runs', json={'case_id': 'case-1'}, headers=POST)
     assert response.status_code == 202
     saved = wait(client, response.json()['id'])
     assert saved['status'] == 'failed' and saved['result'] is None
@@ -433,6 +433,6 @@ def test_ui_adapter_shapes_results_for_workspace_ui():
 
 def test_state_uses_workspace_ui_case_shape(client):
     items = client.get('/api/state').json()['cases']
-    a = next(c for c in items if c['id'] == 'case-A')
-    assert a['prior'] == '00000001_001.png' and a['current'] == '00000001_002.png'
-    assert a['assertions'] and a['name'] == 'Case A · New fluid'
+    a = next(c for c in items if c['id'] == 'case-1')
+    assert a['prior'] == '00000078_000.png' and a['current'] == '00000078_001.png'
+    assert a['assertions'] and a['name'] == '1 · No fluid, then fluid'
