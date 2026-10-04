@@ -72,7 +72,16 @@ def row_to_run(row):
             'created':row[7],'updated':row[8],'engine':row[9] or 'openswarm','replay':False}
 
 def image_folder(case_id):
-    return RUNTIME/'uploads'/case_id if case_id.startswith('upload-') else catalog.IMAGES
+    upload = RUNTIME/'uploads'/case_id
+    return upload if case_id.startswith('upload-') or upload.is_dir() else catalog.IMAGES
+
+def normalize_case(item):
+    """Read cases saved by the original prototype without rewriting its database."""
+    for scope in ('prior', 'current'):
+        if isinstance(item.get(scope), str):
+            metadata = (item.get('metadata') or {}).get(scope, {})
+            item[scope] = {'image': item[scope], **metadata}
+    return item
 
 def image_path(item, scope):
     return image_folder(item['id'])/item[scope]['image']
@@ -92,7 +101,7 @@ def replay_record(case_id):
 
 def cases():
     with connect() as c:
-        uploaded = [json.loads(row[0]) for row in c.execute('SELECT payload FROM cases ORDER BY created DESC')]
+        uploaded = [normalize_case(json.loads(row[0])) for row in c.execute('SELECT payload FROM cases ORDER BY created DESC')]
         rows = c.execute(f'SELECT {RUN_COLUMNS} FROM runs ORDER BY updated DESC').fetchall()
         signoffs = c.execute('SELECT id,case_id,run_id,source,action,reason,status,created FROM signoffs ORDER BY created DESC').fetchall()
     latest, latest_signoff = {}, {}
@@ -107,7 +116,8 @@ def cases():
         item['replay'] = replay_record(item['id'])
         item['signoff'] = latest_signoff.get(item['id'])
         shown = item['last_run'] if item['last_run'] and item['last_run']['status']=='complete' else item['replay']
-        item['status'] = shown['result']['verdict']['status'] if shown and shown.get('result') else None
+        stored_result = shown.get('result') if shown else None
+        item['status'] = stored_result['verdict']['status'] if stored_result and stored_result.get('verdict') else None
     return result
 
 def case(case_id):
