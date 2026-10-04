@@ -1,4 +1,8 @@
-# TimeLens
+# Pleural Sight
+
+**Presentation Link**: https://canva.link/ti8ifvcw4oxem2n
+
+By Abhishai Ganta, Adnan Barwaniwala, Raj Vansh Bollineni
 
 **A second-reader worklist for follow-up chest X-rays that reads the images before it is allowed to see the report.**
 
