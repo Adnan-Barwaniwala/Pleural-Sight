@@ -57,10 +57,10 @@ NIH ChestX-ray14 (public, de-identified). Labels, views and follow-up order come
 
 Demo slots: **A** new effusion (PA→PA) · **B** AP vs PA (expected *Cannot compare*) · **C** same films as A with a synthetic report that misses the effusion · **D** persistent effusion with an agreeing synthetic report · **E** near-duplicate control (cropped/brightened copy). The pilot set has 19 pairs: 16 PA→PA (4 per label) and 3 AP-vs-PA.
 
-## Replay and evaluation
+## Tests and evaluation
 
 ```powershell
-.venv\Scripts\python scripts\run_eval.py                                     # Evaluation page data
+.venv\Scripts\python scripts\run_eval.py    # pilot results in data\eval\results.json (needs about 100 Gemini requests)
 .venv\Scripts\python -m pytest -q
 ```
 
