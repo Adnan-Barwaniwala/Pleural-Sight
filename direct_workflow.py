@@ -1,42 +1,29 @@
-"""Deterministic MCP client used by TimeLens; can also be driven by OpenSwarm tools."""
-import asyncio
-import json
-import os
+"""Headless engine: calls the same run-bound tools in-process, with no agents.
+
+Used by the evaluation batch and as the fallback when OpenSwarm is unavailable.
+"""
+import time
 from pathlib import Path
-import sys
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-from gemini_direct import ModelError
+
+from analysis_mcp import Worker
+import pipeline
 
 
-async def execute(manifest_path):
-    parameters = StdioServerParameters(command=sys.executable,
-        args=[str(Path(__file__).parent/'analysis_mcp.py')],
-        env={**os.environ, 'TIMELENS_RUN_MANIFEST': str(manifest_path)})
-    async with stdio_client(parameters) as (read, write):
-        async with ClientSession(read, write, read_timeout_seconds=120) as session:
-            await session.initialize()
+class HeadlessEngine:
+    name = 'headless'
 
-            async def call(name):
-                result = await session.call_tool(name, {})
-                text = ''.join(c.text for c in result.content if c.type == 'text')
-                if result.is_error:
-                    raise ModelError(text)
-                return json.loads(text)
+    def __init__(self, manifest_path):
+        self.worker = Worker(Path(manifest_path))
 
-            results = await asyncio.gather(call('assess_images'), call('read_reports'), return_exceptions=True)
-            for result in results:
-                if isinstance(result, BaseException):
-                    raise result
-            images, reports = results
-            comparison = await call('compare_findings')
-            investigator, reassessment = None, None
-            if comparison['investigate']:
-                investigator = await call('investigate')
-                if investigator['data']['request_reassessment']:
-                    reassessment = await call('reassess_images')
-            return {'initial': images, 'reports': reports, 'comparison': comparison,
-                    'investigator': investigator, 'reassessment': reassessment,
-                    'reassessment_disagrees': bool(reassessment and any(
-                        images['data'][s]['state'] != reassessment['data'][s]['state'] for s in ('prior','current'))),
-                    'status': 'needs_human_review', 'version': 1}
+    async def invoke(self, role):
+        started = time.monotonic()
+        tool = pipeline.TOOLS[role]
+        result = await self.worker.call(tool, {})
+        return result, {'role': role, 'label': pipeline.LABELS[role], 'tool': tool, 'session_id': None,
+                        'status': 'completed_headless', 'seconds': round(time.monotonic()-started, 3),
+                        'tool_calls': 1, 'tool_attempts': 1, 'rejected_tool_calls': 0,
+                        'tool_trace': result.get('trace')}
+
+
+async def execute(manifest_path, progress=None):
+    return await pipeline.execute(manifest_path, HeadlessEngine(manifest_path), progress)

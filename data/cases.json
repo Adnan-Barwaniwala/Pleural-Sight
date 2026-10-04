@@ -1,0 +1,140 @@
+[
+  {
+    "id": "case-1",
+    "set": "demo",
+    "name": "No fluid, then fluid",
+    "purpose": "Earlier X-ray: no fluid. Current X-ray: new fluid on both sides. Each written report matches its own X-ray. Reports were written for this demo.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "78",
+    "prior": {
+      "image": "00000078_000.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "No Finding",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000078_001.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "Atelectasis|Effusion",
+      "effusion": true
+    },
+    "reports": [
+      {
+        "scope": "prior",
+        "text": "The lungs are clear. No pleural effusion.",
+        "source": "synthetic",
+        "synthetic": true
+      },
+      {
+        "scope": "current",
+        "text": "New small bilateral pleural effusions, more prominent on the left.",
+        "source": "synthetic",
+        "synthetic": true
+      }
+    ],
+    "truth": {
+      "nih_label": "new",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "case-2",
+    "set": "demo",
+    "name": "Images only",
+    "purpose": "Fluid on both sides in both X-rays (NIH labels). No written reports, so only the images are compared.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "99",
+    "prior": {
+      "image": "00000099_000.png",
+      "order": 0,
+      "view": "PA",
+      "findings": "Atelectasis|Effusion",
+      "effusion": true
+    },
+    "current": {
+      "image": "00000099_001.png",
+      "order": 1,
+      "view": "PA",
+      "findings": "Atelectasis|Effusion",
+      "effusion": true
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "persistent",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "case-3",
+    "set": "demo",
+    "name": "Front and back views",
+    "purpose": "The earlier X-ray was taken from the back (PA) and the current one from the front (AP). Different views can create or hide the look of fluid, so TimeLens refuses to compare them.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "13",
+    "prior": {
+      "image": "00000013_017.png",
+      "order": 42,
+      "view": "PA",
+      "findings": "No Finding",
+      "effusion": false
+    },
+    "current": {
+      "image": "00000013_018.png",
+      "order": 43,
+      "view": "AP",
+      "findings": "Effusion|Infiltration|Pneumothorax",
+      "effusion": true
+    },
+    "reports": [],
+    "truth": {
+      "nih_label": "new",
+      "expected_status": "cannot_compare",
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  },
+  {
+    "id": "case-4",
+    "set": "demo",
+    "name": "Report disagrees",
+    "purpose": "Fluid on the right in both X-rays. The earlier report matches its X-ray, but the current report wrongly says the lungs are clear. Reports were written for this demo.",
+    "source": "NIH ChestX-ray14",
+    "patient_id": "61",
+    "prior": {
+      "image": "00000061_002.png",
+      "order": 2,
+      "view": "PA",
+      "findings": "Effusion",
+      "effusion": true
+    },
+    "current": {
+      "image": "00000061_003.png",
+      "order": 3,
+      "view": "PA",
+      "findings": "Effusion|Pleural_Thickening",
+      "effusion": true
+    },
+    "reports": [
+      {
+        "scope": "prior",
+        "text": "Large right pleural effusion.",
+        "source": "synthetic",
+        "synthetic": true
+      },
+      {
+        "scope": "current",
+        "text": "The lungs are clear. No pleural effusion.",
+        "source": "synthetic",
+        "synthetic": true
+      }
+    ],
+    "truth": {
+      "nih_label": "persistent",
+      "expected_status": null,
+      "note": "NIH labels are mined from reports and can be wrong."
+    }
+  }
+]
