@@ -60,12 +60,13 @@ def result(stored, item):
                 images[s] = {k: a[s][k] for k in ('state', 'evidence', 'limitations')}
             else:
                 images[s] = {'state': 'not_assessable',
-                             'evidence': f"The image was reviewed twice and the answers differed ({WORDS[a[s]['state']]} vs "
-                                         f"{WORDS[b[s]['state']]}), so no answer is given. First review: {a[s]['evidence']} "
-                                         f"Second review: {b[s]['evidence']}",
+                             'evidence': f"Two independent passes reviewed the image in opposite study order and disagreed "
+                                         f"({WORDS[a[s]['state']]} vs {WORDS[b[s]['state']]}), so TimeLens does not guess. "
+                                         f"First pass: {a[s]['evidence']} Second pass: {b[s]['evidence']}",
                              'limitations': a[s]['limitations'] + b[s]['limitations']}
         if not reading['consistent']:
-            note = 'The images were reviewed twice and the answers differed, so the change could not be determined. Review these images yourself.'
+            note = ('The image review ran two independent passes in opposite study order. They disagreed, so TimeLens '
+                    'does not guess. A human should review the images.')
     states = {s: images[s]['state'] for s in ('prior', 'current')}
     extracted = (stored.get('reports') or {}).get('data') or {'claims': []}
     claims = [{k: c[k] for k in ('report_index', 'scope', 'state', 'quote', 'verdict')}

@@ -50,6 +50,8 @@ def connect():
     c.execute('CREATE TABLE IF NOT EXISTS cases (id TEXT PRIMARY KEY, payload TEXT NOT NULL, created REAL NOT NULL)')
     c.execute('CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, case_id TEXT NOT NULL, status TEXT NOT NULL, stage TEXT, result TEXT, trace TEXT, error TEXT, created REAL NOT NULL, updated REAL NOT NULL)')
     c.execute('CREATE TABLE IF NOT EXISTS signoffs (id TEXT PRIMARY KEY, case_id TEXT NOT NULL, run_id TEXT, source TEXT NOT NULL, action TEXT NOT NULL, reason TEXT, status TEXT, created REAL NOT NULL)')
+    c.execute('CREATE TABLE IF NOT EXISTS case_edits (id TEXT PRIMARY KEY, payload TEXT, deleted INTEGER NOT NULL DEFAULT 0)')
+    c.execute('CREATE TABLE IF NOT EXISTS run_inputs (id TEXT PRIMARY KEY, payload TEXT NOT NULL)')
     columns = {row[1] for row in c.execute('PRAGMA table_info(runs)')}
     for column in ('stage','trace','engine'):
         if column not in columns:
@@ -75,6 +77,25 @@ def image_folder(case_id):
     upload = RUNTIME/'uploads'/case_id
     return upload if case_id.startswith('upload-') or upload.is_dir() else catalog.IMAGES
 
+
+async def report_input(form, scope):
+    """Return at most one report for a study, from text or one file."""
+    text = form.get(scope+'_report', '')
+    if not isinstance(text, str):
+        raise ValueError('Report text must be text.')
+    files = [file for file in form.getlist(scope+'_report_file') if getattr(file, 'filename', '')]
+    if len(files) > 1:
+        raise ValueError(f'Attach only one {scope} report.')
+    if text.strip() and files:
+        raise ValueError(f'For the {scope} report, paste text or attach a file—not both.')
+    if text.strip():
+        return {'scope':scope, 'text':validate_text(text), 'source':'pasted text', 'synthetic':False}
+    if files:
+        file = files[0]
+        return {'scope':scope, 'text':extract_report(await file.read(MAX_REPORT+1), file.filename),
+                'source':'uploaded report', 'synthetic':False}
+    return None
+
 def normalize_case(item):
     """Read cases saved by the original prototype without rewriting its database."""
     for scope in ('prior', 'current'):
@@ -99,9 +120,10 @@ def replay_record(case_id):
         return None
     return {**json.loads(path.read_text()), 'replay': True}
 
-def cases():
+def cases(include_deleted=False):
     with connect() as c:
-        uploaded = [normalize_case(json.loads(row[0])) for row in c.execute('SELECT payload FROM cases ORDER BY created DESC')]
+        edits = {r[0]: r[1:] for r in c.execute('SELECT id,payload,deleted FROM case_edits')}
+        uploaded = [normalize_case(json.loads(row[0])) for row in c.execute('SELECT payload FROM cases ORDER BY created ASC, rowid ASC')]
         rows = c.execute(f'SELECT {RUN_COLUMNS} FROM runs ORDER BY updated DESC').fetchall()
         signoffs = c.execute('SELECT id,case_id,run_id,source,action,reason,status,created FROM signoffs ORDER BY created DESC').fetchall()
     latest, latest_signoff = {}, {}
@@ -110,17 +132,40 @@ def cases():
     for row in signoffs:
         latest_signoff.setdefault(row[1], {'id':row[0],'run_id':row[2],'source':row[3],'action':row[4],'reason':row[5],'status':row[6],'created':row[7]})
     result = [catalog.public(item) for item in catalog.catalog()] + uploaded
+    result = [json.loads(edits[item['id']][0]) if item['id'] in edits and edits[item['id']][0] else item for item in result]
+    if not include_deleted:
+        result = [item for item in result if not edits.get(item['id'], (None, 0))[1]]
     unnamed_upload = 0
     for item in result:
+        item.setdefault('revision', 1)
         is_upload = item.get('set') == 'upload' or item.get('source') == 'User upload'
         if is_upload and (not item.get('name') or item['name'] == 'Uploaded comparison'):
             unnamed_upload += 1
             item['name'] = f'Untitled comparison {unnamed_upload:02d}'
         item['gate'] = case_gate(item)
         item['last_run'] = latest.get(item['id'])
-        item['replay'] = replay_record(item['id'])
+        item['history'] = []
+        for row in rows:
+            if row[1] == item['id']:
+                record = row_to_run(row)
+                with connect() as c:
+                    snapshot = c.execute('SELECT payload FROM run_inputs WHERE id=?', (record['id'],)).fetchone()
+                revision = json.loads(snapshot[0]).get('revision', 1) if snapshot else 1
+                item['history'].append({'id': record['id'], 'status': record['status'], 'revision': revision})
+        if item['last_run'] and item['history'][0]['revision'] != item['revision']:
+            item['last_run'] = None
+        item['replay'] = replay_record(item['id']) if item['revision']==1 else None
         item['signoff'] = latest_signoff.get(item['id'])
         shown = item['last_run'] if item['last_run'] and item['last_run']['status']=='complete' else item['replay']
+        if item['signoff']:
+            signed_result_is_current = bool(
+                shown and (
+                    (item['signoff']['source'] == 'replay' and shown.get('replay')) or
+                    item['signoff']['run_id'] == shown['id']
+                )
+            )
+            if not signed_result_is_current:
+                item['signoff'] = None
         stored_result = shown.get('result') if shown else None
         item['status'] = stored_result['verdict']['status'] if stored_result and stored_result.get('verdict') else None
     return result
@@ -159,13 +204,16 @@ def update_run(run_id, **changes):
     values['updated'] = time.time()
     assignments = ','.join(key+'=?' for key in values)
     with connect() as c:
-        c.execute(f'UPDATE runs SET {assignments} WHERE id=?', (*values.values(),run_id))
+        c.execute(f"UPDATE runs SET {assignments} WHERE id=? AND status != 'interrupted'", (*values.values(),run_id))
 
 async def process_run(run_id, manifest_path, engine):
     update_run(run_id,status='running',stage='launching_agents',error=None)
     runner = execute_workflow or ENGINES[engine]
     try:
         result = await runner(manifest_path, progress=lambda stage:update_run(run_id,stage=stage))
+    except asyncio.CancelledError:
+        update_run(run_id,status='interrupted',stage='interrupted',error='Stopped by you.')
+        raise
     except (OpenSwarmError,ModelError,asyncio.TimeoutError) as exc:
         message = str(exc) if not isinstance(exc,asyncio.TimeoutError) else 'OpenSwarm agent timed out.'
         update_run(run_id,status='failed',stage='failed',error=message)
@@ -181,6 +229,10 @@ def retain_task(run_id, task):
 
 def recover_interrupted_runs():
     with connect() as c:
+        for row in c.execute("SELECT id FROM runs WHERE status IN ('queued','running')"):
+            folder = RUNTIME/'runs'/row[0]
+            if folder.is_dir():
+                (folder/'cancelled').touch()
         c.execute("UPDATE runs SET status='interrupted',stage='interrupted',error='Server restarted before the run completed.',updated=? WHERE status IN ('queued','running')",(time.time(),))
 
 @app.middleware('http')
@@ -254,18 +306,7 @@ async def upload(request: Request):
                 metadata[scope] = validate_image(blobs[scope])
                 view = form.get(scope+'_view','unknown')
                 views[scope] = view if view in ('PA','AP') else 'unknown'
-            reports = []
-            for scope in ['prior','current']:
-                text = form.get(scope+'_report','')
-                if not isinstance(text,str):
-                    raise ValueError('Report text must be text.')
-                if text.strip():
-                    reports.append({'scope':scope,'text':validate_text(text),'source':'pasted text','synthetic':False})
-                for file in form.getlist(scope+'_report_file'):
-                    if getattr(file,'filename',''):
-                        reports.append({'scope':scope,'text':extract_report(await file.read(MAX_REPORT+1),file.filename),'source':'uploaded report','synthetic':False})
-            if len(reports)>4:
-                raise ValueError('Use at most four reports per case.')
+            reports = [report for scope in ('prior','current') if (report := await report_input(form, scope))]
             cid = 'upload-'+uuid.uuid4().hex[:12]
             if not comparison_name:
                 comparison_name = f'Untitled comparison {cid[-4:].upper()}'
@@ -300,6 +341,7 @@ async def run(request: Request):
     if engine == 'openswarm' and not openswarm_ready():
         raise HTTPException(503,'OpenSwarm is not reachable. Start the OpenSwarm app or use the headless runner.')
     selected = case(str(body.get('case_id','')))
+    ensure_idle(selected['id'])
     rid = uuid.uuid4().hex
     folder = (RUNTIME/'runs'/rid).resolve()
     folder.mkdir(parents=True, mode=0o700)
@@ -311,6 +353,7 @@ async def run(request: Request):
     manifest_path.write_text(json.dumps(manifest))
     now = time.time()
     with connect() as c:
+        c.execute('INSERT INTO run_inputs VALUES (?,?)', (rid,json.dumps(selected)))
         c.execute('INSERT INTO runs (id,case_id,status,stage,result,trace,error,created,updated,engine) VALUES (?,?,?,?,?,?,?,?,?,?)',
                   (rid,selected['id'],'queued','queued',None,'[]',None,now,now,engine))
     retain_task(rid,asyncio.create_task(process_run(rid,manifest_path,engine)))
@@ -319,7 +362,175 @@ async def run(request: Request):
 @app.get('/api/runs/{run_id}')
 def get_run(run_id: str):
     record = run_record(run_id)
-    return ui_adapter.run(record,case(record['case_id']))
+    with connect() as c:
+        snapshot = c.execute('SELECT payload FROM run_inputs WHERE id=?', (run_id,)).fetchone()
+    return ui_adapter.run(record,json.loads(snapshot[0]) if snapshot else case(record['case_id']))
+
+def ensure_idle(case_id):
+    with connect() as c:
+        active = c.execute("SELECT id FROM runs WHERE case_id=? AND status IN ('queued','running')", (case_id,)).fetchone()
+    if active:
+        raise HTTPException(409, 'Stop the running comparison before changing it.')
+
+
+def save_case_edit(item):
+    previous = case(item['id'])
+    value = {k:v for k,v in item.items() if k not in ('gate','history','last_run','replay','signoff','status')}
+    value['revision'] = item.get('revision', 1) + 1
+    with connect() as c:
+        # Freeze legacy run inputs before applying the first editable revision.
+        for row in c.execute('SELECT id FROM runs WHERE case_id=?',(item['id'],)).fetchall():
+            c.execute('INSERT OR IGNORE INTO run_inputs VALUES (?,?)',(row[0],json.dumps(previous)))
+        c.execute('INSERT INTO case_edits VALUES (?,?,0) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload',
+                  (item['id'], json.dumps(value)))
+
+
+def check_revision(item, revision):
+    if str(item['revision']) != str(revision):
+        raise HTTPException(409, 'This comparison changed in another window. Refresh and try again.')
+
+
+@app.post('/api/runs/{run_id}/interrupt')
+async def interrupt(run_id: str):
+    record = run_record(run_id)
+    if record['status'] not in ('queued','running'):
+        return {'status':record['status']}
+    folder = RUNTIME/'runs'/run_id
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder/'cancelled').touch()
+    update_run(run_id,status='interrupted',stage='interrupted',error='Stopped by you.')
+    task = RUN_TASKS.get(run_id)
+    if task:
+        task.cancel()
+    errors = await openswarm_workflow.stop_sessions(folder)
+    return {'status':'interrupted', 'warning': 'Local work stopped; OpenSwarm could not confirm every session stopped.' if errors else None}
+
+
+@app.delete('/api/cases/{case_id}')
+async def delete_case(case_id: str):
+    item = case(case_id)
+    ensure_idle(case_id)
+    with connect() as c:
+        for row in c.execute('SELECT id FROM runs WHERE case_id=?',(case_id,)).fetchall():
+            c.execute('INSERT OR IGNORE INTO run_inputs VALUES (?,?)',(row[0],json.dumps(item)))
+        c.execute('INSERT INTO case_edits(id,deleted) VALUES (?,1) ON CONFLICT(id) DO UPDATE SET deleted=1', (case_id,))
+    return {'deleted':True}
+
+
+@app.post('/api/cases/{case_id}/restore')
+def restore_case(case_id: str):
+    if not any(item['id']==case_id for item in cases(include_deleted=True)):
+        raise HTTPException(404, 'Comparison not found.')
+    with connect() as c:
+        c.execute('UPDATE case_edits SET deleted=0 WHERE id=?', (case_id,))
+    return {'restored':True}
+
+
+@app.get('/api/deleted-cases')
+def deleted_cases():
+    with connect() as c:
+        ids = {row[0] for row in c.execute('SELECT id FROM case_edits WHERE deleted=1')}
+    return [{'id':item['id'],'name':item['name']} for item in cases(include_deleted=True) if item['id'] in ids]
+
+
+@app.post('/api/cases/{case_id}/swap')
+async def swap_case(case_id: str, request: Request):
+    body = await request.json()
+    if not isinstance(body,dict) or not isinstance(body.get('move_reports',True),bool):
+        raise HTTPException(422, 'Provide a valid switch request.')
+    item = case(case_id)
+    ensure_idle(case_id)
+    check_revision(item, body.get('revision'))
+    if body.get('confirmed') is not True:
+        raise HTTPException(422, 'Confirm the corrected chronological order.')
+    item['prior'], item['current'] = item['current'], item['prior']
+    if body.get('move_reports', True):
+        for report in item['reports']:
+            report['scope'] = 'current' if report['scope']=='prior' else 'prior'
+    item['purpose'] = 'Image order corrected and confirmed by uploader; chronology is not independently verified.'
+    save_case_edit(item)
+    return {'saved':True}
+
+
+@app.post('/api/cases/{case_id}/reports')
+async def add_reports(case_id: str, request: Request):
+    item = case(case_id)
+    ensure_idle(case_id)
+    try:
+        async with request.form(max_files=4, max_fields=4, max_part_size=MAX_REPORT) as form:
+            check_revision(item, form.get('revision'))
+            added = [report for scope in ('prior','current') if (report := await report_input(form, scope))]
+            if not added:
+                raise ValueError('Add at least one report.')
+            occupied = {report['scope'] for report in item['reports']}
+            duplicate = next((report['scope'] for report in added if report['scope'] in occupied), None)
+            if duplicate:
+                label = 'earlier' if duplicate == 'prior' else 'current'
+                raise ValueError(f'The {label} study already has a report. Each study can have only one.')
+            if len(item['reports'])+len(added)>2:
+                raise ValueError('A comparison can have at most two reports: one earlier and one current.')
+            ensure_idle(case_id)
+            check_revision(case(case_id), form.get('revision'))
+            item['reports'].extend(added)
+            save_case_edit(item)
+    except ValueError as exc:
+        raise HTTPException(422,str(exc)) from exc
+    return {'saved':True}
+
+
+@app.put('/api/cases/{case_id}/reports/{scope}')
+async def replace_report(case_id: str, scope: str, request: Request):
+    if scope not in ('prior', 'current'):
+        raise HTTPException(404, 'Study not found.')
+    item = case(case_id)
+    ensure_idle(case_id)
+    try:
+        async with request.form(max_files=1, max_fields=2, max_part_size=MAX_REPORT) as form:
+            check_revision(item, form.get('revision'))
+            report = await report_input(form, scope)
+            if not report:
+                raise ValueError('Paste report text or attach one report file.')
+            item['reports'] = [saved for saved in item['reports'] if saved['scope'] != scope] + [report]
+            check_revision(case(case_id), form.get('revision'))
+            save_case_edit(item)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return {'saved': True}
+
+
+@app.post('/api/cases/{case_id}/images/{scope}')
+async def replace_image(case_id: str, scope: str, request: Request):
+    if scope not in ('prior', 'current'):
+        raise HTTPException(404, 'Study not found.')
+    item = case(case_id)
+    ensure_idle(case_id)
+    try:
+        async with request.form(max_files=1, max_fields=4, max_part_size=MAX_IMAGE) as form:
+            check_revision(item, form.get('revision'))
+            if form.get('confirmed') != 'true':
+                raise ValueError('Confirm that this replacement remains the same patient and correct study order.')
+            file = form.get('image')
+            if not hasattr(file, 'read') or not getattr(file, 'filename', ''):
+                raise ValueError('Choose a PNG or JPEG image.')
+            blob = await file.read(MAX_IMAGE + 1)
+            metadata = validate_image(blob)
+            view = form.get('view', 'unknown')
+            if view not in ('PA', 'AP', 'unknown'):
+                view = 'unknown'
+            suffix = '.png' if metadata['format'] == 'PNG' else '.jpg'
+            name = f'{scope}-v{item.get("revision", 1)+1}{suffix}'
+            folder = image_folder(item['id'])
+            folder.mkdir(parents=True, exist_ok=True, mode=0o700)
+            (folder/name).write_bytes(blob)
+            item[scope] = {'image':name, 'view':view, 'order':None, **metadata,
+                           'sha256':hashlib.sha256(blob).hexdigest()}
+            item['purpose'] = 'Replacement image and chronology confirmed by uploader; not independently verified.'
+            check_revision(case(case_id), form.get('revision'))
+            save_case_edit(item)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return {'saved': True}
+
 
 @app.post('/api/signoffs')
 async def signoff(request: Request):

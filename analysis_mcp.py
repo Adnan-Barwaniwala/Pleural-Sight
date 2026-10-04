@@ -31,6 +31,7 @@ DESCRIPTIONS = {
 class Worker:
     def __init__(self, manifest_path):
         path = Path(manifest_path)
+        self.cancelled = path.parent/'cancelled'
         self.manifest = json.loads(path.read_text())
         self.db = path.parent/'stages.sqlite'
         with self.connect() as conn:
@@ -68,6 +69,8 @@ class Worker:
         return self.require('read_reports')
 
     async def call(self, name, arguments):
+        if self.cancelled.exists():
+            raise gemini.ModelError('This run was stopped. No further tools are permitted.')
         if name not in SCHEMAS or arguments:
             raise gemini.ModelError('Unknown tool or forbidden arguments.')
         existing = self.get(name)
@@ -100,6 +103,8 @@ class Worker:
             with self.connect() as conn:
                 conn.execute('UPDATE stages SET status=?,payload=? WHERE name=?', ('failed', json.dumps({'error': message}), name))
             raise
+        if self.cancelled.exists():
+            raise gemini.ModelError('This run was stopped; its late result is not accepted.')
         with self.connect() as conn:
             conn.execute('UPDATE stages SET status=?,payload=? WHERE name=?', ('complete', json.dumps(result), name))
         return result

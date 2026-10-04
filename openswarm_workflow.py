@@ -1,5 +1,6 @@
 """OpenSwarm engine: one fresh, role-restricted agent per TimeLens tool."""
 import asyncio
+import json
 import os
 from pathlib import Path
 import sys
@@ -33,13 +34,26 @@ def agent_model():
     return os.environ.get('TIMELENS_OPENSWARM_MODEL', 'gemini-3.8-flash')
 
 
+async def create_registration(kind, payload):
+    """A cancelled HTTP thread can still create a resource: await and remove it."""
+    pending = asyncio.create_task(api(f'/api/{kind}/create', payload))
+    try:
+        return await asyncio.shield(pending)
+    except asyncio.CancelledError:
+        response = await pending
+        item = _unwrap(response, 'tool' if kind=='tools' else 'mode')
+        if isinstance(item,dict) and item.get('id'):
+            await api(f"/api/{kind}/{item['id']}", method='DELETE')
+        raise
+
+
 async def register_role(run_id, role, manifest_path):
     tool_name = pipeline.TOOLS[role]
     label = pipeline.LABELS[role]
     name = f'timelens-{run_id[:10]}-{role}'
     # The MCP process is launched by OpenSwarm from its own working directory.
     manifest_path = Path(manifest_path).resolve()
-    created = await api('/api/tools/create', {
+    created = await create_registration('tools', {
         'name': name,
         'description': f'TimeLens {label} connector for run {run_id[:10]}',
         'auth_type': 'none', 'auth_status': 'configured',
@@ -76,7 +90,7 @@ async def register_role(run_id, role, manifest_path):
             'browser, memory, session, web, or any other connector. The assigned MCP tool owns all private inputs; '
             'do not seek them.'
         )
-        mode_created = await api('/api/modes/create', {
+        mode_created = await create_registration('modes', {
             'name': name, 'memory_scope': 'own', 'tools': [marker, qualified],
             'instructions': instructions, 'system_prompt': instructions, 'model': agent_model(),
         })
@@ -105,16 +119,28 @@ async def launch_role(run_id, manifest_path, registration, case_name=''):
     tool_name = pipeline.TOOLS[role]
     workspace = Path(manifest_path).resolve().parent/'agent-workspaces'/role
     workspace.mkdir(parents=True, exist_ok=True, mode=0o700)
-    launched = await api('/api/agents/launch', {
+    launch_request = asyncio.create_task(api('/api/agents/launch', {
         'name': f'TimeLens · {label} · {case_name or run_id[:8]}',
         'model': agent_model(), 'provider': 'ag', 'mode': registration['mode_id'],
         'allowed_tools': registration['allowed'], 'system_prompt': registration['instructions'],
         'max_turns': 8, 'target_directory': str(workspace),
         'prompt': registration['instructions'],
-    })
+    }))
+    try:
+        launched = await asyncio.shield(launch_request)
+    except asyncio.CancelledError:
+        launched = await launch_request
+        if launched.get('session_id'):
+            (Path(manifest_path).parent/f'session-{role}.json').write_text(json.dumps({'session_id':launched['session_id']}))
+            await api(f"/api/agents/sessions/{launched['session_id']}/stop", {})
+        raise
     session_id = launched.get('session_id') if isinstance(launched, dict) else None
     if not session_id:
         raise OpenSwarmError(f'OpenSwarm did not launch the {label}.')
+    (Path(manifest_path).parent/f'session-{role}.json').write_text(json.dumps({'session_id':session_id}))
+    if (Path(manifest_path).parent/'cancelled').exists():
+        await api(f'/api/agents/sessions/{session_id}/stop', {})
+        raise asyncio.CancelledError()
     started = time.monotonic()
     worker = Worker(manifest_path)
     while time.monotonic()-started < AGENT_TIMEOUT:
@@ -155,10 +181,25 @@ class OpenSwarmEngine:
         run_id = self.manifest['run_id']
         registration = await register_role(run_id, role, self.manifest_path)
         try:
-            return await launch_role(run_id, self.manifest_path, registration, self.manifest.get('case_name', ''))
+            try:
+                return await launch_role(run_id, self.manifest_path, registration, self.manifest.get('case_name', ''))
+            except (asyncio.CancelledError, Exception):
+                await stop_sessions(self.manifest_path.parent)
+                raise
         finally:
             await cleanup_registration(registration)
 
 
 async def execute(manifest_path, progress=None):
     return await pipeline.execute(manifest_path, OpenSwarmEngine(manifest_path), progress)
+
+
+async def stop_sessions(folder):
+    errors = []
+    for path in Path(folder).glob('session-*.json'):
+        session_id = json.loads(path.read_text())['session_id']
+        try:
+            await api(f'/api/agents/sessions/{session_id}/stop', {}, timeout=10)
+        except OpenSwarmError:
+            errors.append(session_id)
+    return errors

@@ -5,3 +5,5 @@ runtime/
 .env
 *.log
 test-uploads/
+.DS_Store
+scratch/

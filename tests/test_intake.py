@@ -171,7 +171,9 @@ def test_legacy_upload_names_are_distinguished(client):
             (folder/'prior.png').write_bytes(png((index, 0, 0)))
             (folder/'current.png').write_bytes(png((index + 1, 0, 0)))
             connection.execute('INSERT INTO cases VALUES (?,?,?)', (payload['id'], json.dumps(payload), index))
-    names = [item['name'] for item in server.cases() if item['id'].startswith('legacy-')]
+    uploaded = [item for item in server.cases() if item['id'].startswith('legacy-')]
+    assert [item['id'] for item in uploaded] == ['legacy-0', 'legacy-1']
+    names = [item['name'] for item in uploaded]
     assert names == ['Untitled comparison 01', 'Untitled comparison 02']
 
 

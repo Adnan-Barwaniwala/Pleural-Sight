@@ -1,0 +1,207 @@
+{
+  "source": "NIH ChestX-ray14",
+  "metadata_sha256": "dc1d2df67fdc1c5a7601d48699cda2b13dc2c4841488b4183dcf04884dbaca11",
+  "reports": "Synthetic software-test fixtures, NOT original clinical reports.",
+  "live_model_runs_performed": false,
+  "cases": [
+    {
+      "folder": "07_fluid_resolution",
+      "name": "Fluid resolves \u2014 label challenge",
+      "patient_id": "23",
+      "purpose": "Resolution on a new patient. The two films look quite similar, so this is also a useful label-versus-model challenge. The current NIH No Finding label is not proof of a normal image.",
+      "images": {
+        "prior": {
+          "file": "1_earlier_PA.png",
+          "original": "00000023_002.png",
+          "sha256": "10691f5e40be9686f8970f95bce7034f2154abb50874da62e295486c5eea7fac",
+          "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz",
+          "view": "PA",
+          "follow_up": 2,
+          "labels": "Effusion|Infiltration"
+        },
+        "current": {
+          "file": "2_current_PA.png",
+          "original": "00000023_003.png",
+          "sha256": "939878ace0497f1a74fbdcd10909f15129553573c262db0deaa3f279fe4221ea",
+          "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz",
+          "view": "PA",
+          "follow_up": 3,
+          "labels": "No Finding"
+        }
+      },
+      "reports": [
+        {
+          "file": "earlier_report.txt",
+          "scope": "prior",
+          "synthetic": true,
+          "expected_extraction": "present"
+        },
+        {
+          "file": "current_report.txt",
+          "scope": "current",
+          "synthetic": true,
+          "expected_extraction": "absent"
+        }
+      ],
+      "label_reference_pattern": "resolved"
+    },
+    {
+      "folder": "08_other_changes_remain",
+      "name": "Fluid resolves, other changes remain",
+      "patient_id": "44",
+      "purpose": "Separating fluid from other abnormalities: pleural thickening means thickening of the lung lining, not necessarily fluid. Visible devices and other shadows make this a harder image pair. Absence of fluid must not become a claim that the entire X-ray is normal.",
+      "images": {
+        "prior": {
+          "file": "1_earlier_PA.png",
+          "original": "00000044_000.png",
+          "sha256": "635290d96dcaaf1d30432f2d20f8c6001e598416a48483abc4b8cbd47c9b9790",
+          "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz",
+          "view": "PA",
+          "follow_up": 0,
+          "labels": "Consolidation|Effusion|Infiltration"
+        },
+        "current": {
+          "file": "2_current_PA.png",
+          "original": "00000044_001.png",
+          "sha256": "61f90fbe3b53435cbe8a61091f0c80ace19ae8a48dc42c39de851efad71e280f",
+          "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz",
+          "view": "PA",
+          "follow_up": 1,
+          "labels": "Infiltration|Pleural_Thickening"
+        }
+      },
+      "reports": [
+        {
+          "file": "earlier_report.txt",
+          "scope": "prior",
+          "synthetic": true,
+          "expected_extraction": "present"
+        },
+        {
+          "file": "current_report.txt",
+          "scope": "current",
+          "synthetic": true,
+          "expected_extraction": "absent"
+        }
+      ],
+      "label_reference_pattern": "resolved"
+    },
+    {
+      "folder": "09_uncertain_report",
+      "name": "Report is unsure about fluid",
+      "patient_id": "84",
+      "purpose": "The current report deliberately hedges despite Effusion labels on both images. Extract uncertainty, not a definite absence or contradiction. Presence in both images does not establish unchanged severity.",
+      "images": {
+        "prior": {
+          "file": "1_earlier_PA.png",
+          "original": "00000084_000.png",
+          "sha256": "5d48445bb1671c3501ebc37eaa9ed6996329c06c7c580571a9563ed9b68d854b",
+          "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz",
+          "view": "PA",
+          "follow_up": 0,
+          "labels": "Effusion"
+        },
+        "current": {
+          "file": "2_current_PA.png",
+          "original": "00000084_001.png",
+          "sha256": "70a347be34b4ecc10bef27e4fd739d1688f2ba6c69cc5f6f1cecd3c5609df870",
+          "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz",
+          "view": "PA",
+          "follow_up": 1,
+          "labels": "Effusion"
+        }
+      },
+      "reports": [
+        {
+          "file": "earlier_report.txt",
+          "scope": "prior",
+          "synthetic": true,
+          "expected_extraction": "present"
+        },
+        {
+          "file": "current_report.txt",
+          "scope": "current",
+          "synthetic": true,
+          "expected_extraction": "uncertain"
+        }
+      ],
+      "label_reference_pattern": "present_both"
+    },
+    {
+      "folder": "10_report_silent_on_fluid",
+      "name": "Reports discuss something else",
+      "patient_id": "3",
+      "purpose": "Both reports are real text inputs but contain no statement about fluid. Missing mention must not be interpreted as no fluid, agreement, or no report uploaded. Hernia is the NIH label on both studies; do not invent a subtype or a severity.",
+      "images": {
+        "prior": {
+          "file": "1_earlier_PA.png",
+          "original": "00000003_001.png",
+          "sha256": "98ea67a419bc90f91598551d60b6d0351605e5c1f0183d0aa3f3b9db9a5b67b0",
+          "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz",
+          "view": "PA",
+          "follow_up": 0,
+          "labels": "Hernia"
+        },
+        "current": {
+          "file": "2_current_PA.png",
+          "original": "00000003_002.png",
+          "sha256": "345f9e8065f506880511bc739d3a364fbba834a431a25e6f2854e47a7ed186b1",
+          "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz",
+          "view": "PA",
+          "follow_up": 1,
+          "labels": "Hernia"
+        }
+      },
+      "reports": [
+        {
+          "file": "earlier_report.txt",
+          "scope": "prior",
+          "synthetic": true,
+          "expected_extraction": "no_relevant_claim"
+        },
+        {
+          "file": "current_report.txt",
+          "scope": "current",
+          "synthetic": true,
+          "expected_extraction": "no_relevant_claim"
+        }
+      ],
+      "label_reference_pattern": "absent_both"
+    },
+    {
+      "folder": "11_history_in_current_report",
+      "name": "Current report mentions the past",
+      "patient_id": "39",
+      "purpose": "Upload only a CURRENT report. It contains both a historical negative and a current positive. Extract present for the current study; do not turn the historical sentence into a current negative or manufacture an uploaded earlier report. The visible change is subtle, so model agreement with the NIH label is not guaranteed.",
+      "images": {
+        "prior": {
+          "file": "1_earlier_PA.png",
+          "original": "00000039_003.png",
+          "sha256": "b375b8bdf72fabc5d5eb17cd4c3a944f51aaeda347b1b6a33b576e2dc64504ff",
+          "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz",
+          "view": "PA",
+          "follow_up": 3,
+          "labels": "No Finding"
+        },
+        "current": {
+          "file": "2_current_PA.png",
+          "original": "00000039_004.png",
+          "sha256": "468042129f75d515b03e89910cf856415a3b53d6bfb40100d90eff606623663a",
+          "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz",
+          "view": "PA",
+          "follow_up": 4,
+          "labels": "Effusion"
+        }
+      },
+      "reports": [
+        {
+          "file": "current_report.txt",
+          "scope": "current",
+          "synthetic": true,
+          "expected_extraction": "present"
+        }
+      ],
+      "label_reference_pattern": "new"
+    }
+  ]
+}
