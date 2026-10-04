@@ -6,8 +6,6 @@
 
 **Pixels first. Words second. A human decides.**
 
-By Abhishai Ganta, Adnan Barwaniwala, Raj Vansh Bollineni
-
 A second reader for follow-up chest X-rays that reads the images before it is allowed to see the report.
 
 [![Devpost](https://img.shields.io/badge/Devpost-Pleural%20Sight-003E54?logo=devpost&logoColor=white)](https://devpost.com/software/pleural-sight)
