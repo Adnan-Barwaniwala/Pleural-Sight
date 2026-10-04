@@ -1,0 +1,44 @@
+[
+  {
+    "image": "00000001_002.png",
+    "bytes": 351772,
+    "sha256": "ff2f2da7867f237c4ed0df9337a9325d77d74bb47b18479e734b92991cdd3fa5",
+    "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz"
+  },
+  {
+    "image": "00000011_000.png",
+    "bytes": 453854,
+    "sha256": "36a8377eaf0c6b8866cf6c4ee5f286d3a3c3fe9a7e6c2c66ec4420e60966938e",
+    "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz"
+  },
+  {
+    "image": "00000011_001.png",
+    "bytes": 370540,
+    "sha256": "b79750d06d7d5a5491bc35d6284bacf6296f1124261d04db8d5c1ec58851eb29",
+    "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz"
+  },
+  {
+    "image": "00000001_000.png",
+    "bytes": 457171,
+    "sha256": "54637429eef039060cf9feb4a07042d4986a71042b41cd1c833befd26cabe9bd",
+    "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz"
+  },
+  {
+    "image": "00000061_002.png",
+    "bytes": 434030,
+    "sha256": "568c65fc0b33edd56aa9e4ccf61d57d35335713363d0d89928fc9c4065dd1d49",
+    "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz"
+  },
+  {
+    "image": "00000001_001.png",
+    "bytes": 444655,
+    "sha256": "cbfc1b08421b44592a84aa9583950c5a097c9c3a51951832c67d3c59a700d250",
+    "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz"
+  },
+  {
+    "image": "00000061_003.png",
+    "bytes": 418228,
+    "sha256": "5cc9baf4bea904b8e3ef6fd8fc7eafe4362f8892392f3a769f435284eda036a8",
+    "source": "https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz"
+  }
+]

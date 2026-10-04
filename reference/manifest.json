@@ -1,0 +1,55 @@
+{
+  "folder": "1tGQ7M_5gvoSpJVL7jeLz1-MpAt_nQafM",
+  "excluded": [
+    "capabilities.json (shared credentials)",
+    "server.log",
+    "server-error.log"
+  ],
+  "files": [
+    {
+      "file": "core.py",
+      "drive_id": "1BuVjyeQ6BcDe906_DNd564YUoREHPl5k",
+      "sha256": "4c0f418d0e9149b14b5294263217744d96d2370ff82651a68679c56068735630"
+    },
+    {
+      "file": "server.py",
+      "drive_id": "1-lVA9LFpQlOxGfgQr2dRPLfUdv-RV4uk",
+      "sha256": "613141bae9c802ad2b01ab6885fff0a37b1d32d2505f0df28b90ec83069a91f6"
+    },
+    {
+      "file": "mcp_server.py",
+      "drive_id": "1Kc7uMivaT_qwZeT0ZrBnIkkpkVlBM3-H",
+      "sha256": "7841e52671981f8cef13dfc022076549f5fd838886ca965a3c41ccdf8c3b81a1"
+    },
+    {
+      "file": "swarm_api.py",
+      "drive_id": "1n29XZhdznHIdF2_wW3hKNz9yPdjqHoz4",
+      "sha256": "228707c5b8214a8b3cb1df4e80e1474fee89fc46bd260b812d155740cb64b51d"
+    },
+    {
+      "file": "setup_openswarm.py",
+      "drive_id": "1ARkt6HwcA0UAQ9stPpFd7GhpFGs8ntal",
+      "sha256": "6641770f3fd9e50baf3dc89332a8a2d1c51017922e1494bbda98baef2d1ba621"
+    },
+    {
+      "file": "download_data.py",
+      "drive_id": "1kVC5uw4vmBBzdI1qvJvPBuowDHAMtF7T",
+      "sha256": "1ace485ed9734f393977b599d0478e790a304984bc2327bb7b0bdb1f15702e55"
+    },
+    {
+      "file": "index.html",
+      "drive_id": "17bod5i5OMee4znZBZ6dg6p2RtcoNdK80",
+      "sha256": "8cb466dd2f2abec7ba841a367c55ad3ec511269076d9adfea17df91472cdc627"
+    },
+    {
+      "file": "REVIEW-AND-SPEC.docx",
+      "drive_id": "1tJc9LGIGwwJ_NMhpKRz7wZ9jgQwQGU3u",
+      "sha256": "901f8ea775db8c3214396acef08d78de2d26d776b72f97f37ef27567cdb4d813"
+    },
+    {
+      "file": "provenance.json",
+      "drive_id": "1ee2fR0IwmIEsw0qmUyjhCo-pTYANb_PD",
+      "sha256": "6a29954db004d66ee7a58b42df209bd94cca27eecb7ad990c1e2af9b319848bb"
+    }
+  ]
+}
