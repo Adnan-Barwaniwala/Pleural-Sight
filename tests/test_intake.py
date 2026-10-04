@@ -362,3 +362,42 @@ def test_openswarm_failure_stops_run_without_fallback(client, monkeypatch):
     saved = wait(client, response.json()['id'])
     assert saved['status'] == 'failed' and saved['result'] is None
     assert saved['error'] == 'Blind Reader failed in OpenSwarm.'
+
+
+def test_quota_rotates_through_key_pool_then_reports_clearly(monkeypatch):
+    monkeypatch.setenv('GEMINI_API_KEYS', 'k1,k2'); monkeypatch.setenv('GEMINI_API_KEY', 'k3')
+    monkeypatch.setenv('TIMELENS_GEMINI_MODEL', 'm1'); monkeypatch.setenv('TIMELENS_GEMINI_FALLBACKS', 'm1')
+    used = []
+
+    async def handler(request):
+        used.append(request.headers['x-goog-api-key'])
+        if request.headers['x-goog-api-key'] != 'k3':
+            return httpx.Response(429, json={})
+        return gemini_reply({'label': 'absent', 'reason': 'clear'})
+    result = asyncio.run(gemini_direct.baseline_naive(png(), png(), transport=httpx.MockTransport(handler)))
+    assert used == ['k1', 'k2', 'k3'] and result['trace']['quota_refusals'] == 2
+
+    async def refuse(request):
+        return httpx.Response(429, json={})
+    with pytest.raises(gemini_direct.ModelError, match='quota exhausted on all 3 key'):
+        asyncio.run(gemini_direct.baseline_naive(png(), png(), transport=httpx.MockTransport(refuse)))
+
+
+def test_identical_request_is_served_from_cache(monkeypatch, tmp_path):
+    monkeypatch.setenv('GEMINI_API_KEY', 'test-only')
+    monkeypatch.setattr(gemini_direct, 'CACHE', tmp_path)
+    calls = []
+    real = httpx.AsyncClient.post
+
+    async def fake_post(self, url, **kwargs):
+        calls.append(url)
+        return gemini_reply({'label': 'absent', 'reason': 'clear'})
+    monkeypatch.setattr(httpx.AsyncClient, 'post', fake_post)
+    first = asyncio.run(gemini_direct.baseline_naive(png(), png()))
+    second = asyncio.run(gemini_direct.baseline_naive(png(), png()))
+    assert len(calls) == 1 and second['trace']['cached'] is True and second['trace']['model_requests'] == 0
+    assert first['data'] == second['data']
+    assert 'test-only' not in ''.join(p.read_text() for p in tmp_path.iterdir())
+    monkeypatch.setenv('TIMELENS_RESPONSE_CACHE', '0')
+    asyncio.run(gemini_direct.baseline_naive(png(), png()))
+    assert len(calls) == 2

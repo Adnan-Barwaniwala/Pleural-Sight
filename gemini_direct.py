@@ -1,6 +1,7 @@
 """Independent, tool-free Gemini calls. Never reuse OpenSwarm account tokens."""
 import asyncio
 import base64
+import hashlib
 import json
 import os
 import re
@@ -17,17 +18,42 @@ class ModelError(RuntimeError):
     pass
 
 
-def api_key():
-    value = os.environ.get('GEMINI_API_KEY') or os.environ.get('GOOGLE_API_KEY')
-    if value:
-        return value
+def _setting(*names):
+    for name in names:
+        if os.environ.get(name):
+            return os.environ[name]
     env_file = Path(__file__).parent/'.env'
     if env_file.is_file():
+        values = {}
         for line in env_file.read_text().splitlines():
             name, separator, candidate = line.partition('=')
-            if separator and name.strip() in ('GEMINI_API_KEY','GOOGLE_API_KEY'):
-                return candidate.strip().strip('"').strip("'")
+            if separator:
+                values[name.strip()] = candidate.strip().strip('"').strip("'")
+        for name in names:
+            if values.get(name):
+                return values[name]
     return None
+
+
+def api_keys():
+    """GEMINI_API_KEYS (comma-separated pool, one per Cloud project) plus GEMINI_API_KEY."""
+    keys = [k.strip() for k in (_setting('GEMINI_API_KEYS') or '').split(',') if k.strip()]
+    single = _setting('GEMINI_API_KEY', 'GOOGLE_API_KEY')
+    if single and single not in keys:
+        keys.append(single)
+    return keys
+
+
+def api_key():
+    keys = api_keys()
+    return keys[0] if keys else None
+
+
+CACHE = Path(__file__).parent/'runtime'/'model-cache'
+
+
+def cache_enabled():
+    return (_setting('TIMELENS_RESPONSE_CACHE') or '1') not in ('0', 'false', 'off')
 
 
 class Strict(BaseModel):
@@ -71,44 +97,63 @@ class BaselineLabel(Strict):
 
 
 def configuration():
-    key = api_key()
-    primary = os.environ.get('TIMELENS_GEMINI_MODEL', 'gemini-3.5-flash')
-    fallbacks = os.environ.get('TIMELENS_GEMINI_FALLBACKS', 'gemini-3.7-flash,gemini-3.6-flash,gemini-3.8-flash')
+    keys = api_keys()
+    primary = _setting('TIMELENS_GEMINI_MODEL') or 'gemini-3.5-flash'
+    fallbacks = _setting('TIMELENS_GEMINI_FALLBACKS') or 'gemini-3.7-flash,gemini-3.6-flash,gemini-3.8-flash'
     models = [primary] + [m.strip() for m in fallbacks.split(',') if m.strip() and m.strip() != primary]
     if not all(re.fullmatch(r'[A-Za-z0-9._-]+', m) for m in models):
         raise ModelError('Invalid TIMELENS_GEMINI_MODEL or TIMELENS_GEMINI_FALLBACKS.')
-    if not key:
+    if not keys:
         raise ModelError('Set GEMINI_API_KEY on the TimeLens server to enable direct Gemini calls.')
-    return key, models
+    return keys, models
 
 
 async def generate(system, parts, schema, *, transport=None):
-    key, models = configuration()
+    keys, models = configuration()
     # One independent user turn, no history, function declarations, tools or file access.
     body = {'systemInstruction': {'parts': [{'text': system}]},
             'contents': [{'role': 'user', 'parts': parts}],
             'generationConfig': {'responseMimeType': 'application/json',
                                  'responseJsonSchema': schema.model_json_schema()}}
-    if len(json.dumps(body).encode()) > 19_000_000:
+    encoded = json.dumps(body, sort_keys=True).encode()
+    if len(encoded) > 19_000_000:
         raise ModelError('Image pair exceeds inline request limit; use smaller images.')
+    # Identical request (same models, prompt, images, schema) -> reuse the stored answer.
+    # Keyed by content only; never stores keys. Disable with TIMELENS_RESPONSE_CACHE=0.
+    cache_file = CACHE/(hashlib.sha256(','.join(models).encode() + encoded).hexdigest() + '.json')
+    if cache_enabled() and transport is None and cache_file.is_file():
+        cached = json.loads(cache_file.read_text())
+        cached['trace'] = {**cached['trace'], 'cached': True, 'seconds': 0, 'model_requests': 0}
+        return cached
     started = time.monotonic()
-    response, model = None, models[0]
+    response, model, refused = None, models[0], 0
     try:
         async with httpx.AsyncClient(timeout=90, transport=transport) as client:
-            # Only transient capacity errors (429/503) are retried, before any output exists:
-            # back off once on the same model, then move to the next configured model.
+            # Only capacity errors are retried, before any output exists:
+            # 429 (quota) -> next key in the pool, then next model; 503 (overloaded) -> one backoff, then next model.
             for model in models:
-                for attempt in range(2):
-                    response = await client.post(
-                        f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
-                        headers={'x-goog-api-key': key}, json=body)
-                    if response.status_code not in (429, 503):
-                        break
-                    await asyncio.sleep(3 * (attempt + 1))
+                for key in keys:
+                    for attempt in range(2):
+                        response = await client.post(
+                            f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
+                            headers={'x-goog-api-key': key}, json=body)
+                        if response.status_code != 503:
+                            break
+                        await asyncio.sleep(3 * (attempt + 1))
+                    if response.status_code == 429:
+                        refused += 1
+                        continue
+                    break
                 if response.status_code not in (429, 503):
                     break
     except httpx.HTTPError:
         raise ModelError('Gemini network request failed or timed out.') from None
+    if response.status_code == 429:
+        raise ModelError(f'Gemini quota exhausted on all {len(keys)} key(s) and {len(models)} model(s). A free-tier key allows '
+                         '20 requests per model per day; enable billing on the key\'s project in AI Studio, or add more keys '
+                         'to GEMINI_API_KEYS.')
+    if response.status_code == 503:
+        raise ModelError('Gemini models are overloaded right now (HTTP 503). Try again in a minute.')
     if response.status_code != 200:
         # Do not return response bodies, URLs, headers, credentials or input text.
         raise ModelError(f'Gemini returned HTTP {response.status_code}; check key, model access and quota.')
@@ -122,10 +167,14 @@ async def generate(system, parts, schema, *, transport=None):
     except (ValueError, KeyError, IndexError, TypeError):
         raise ModelError('Gemini returned an incomplete or invalid structured result.') from None
     usage = payload.get('usageMetadata', {})
-    return {'data': data, 'trace': {'requested_model': models[0], 'used_model': model,
-            'returned_model': payload.get('modelVersion'),
-            'seconds': round(time.monotonic()-started, 3), 'model_requests': 1,
-            'input_tokens': usage.get('promptTokenCount'), 'output_tokens': usage.get('candidatesTokenCount')}}
+    result = {'data': data, 'trace': {'requested_model': models[0], 'used_model': model,
+              'returned_model': payload.get('modelVersion'),
+              'seconds': round(time.monotonic()-started, 3), 'model_requests': 1, 'quota_refusals': refused,
+              'input_tokens': usage.get('promptTokenCount'), 'output_tokens': usage.get('candidatesTokenCount')}}
+    if cache_enabled() and transport is None:
+        CACHE.mkdir(parents=True, exist_ok=True)
+        cache_file.write_text(json.dumps(result))
+    return result
 
 
 def _mime(blob):
@@ -183,7 +232,9 @@ async def read_pair(prior, current, **kwargs):
                           'trace': result['trace']}
     consistent = all(readings['reading_a'][s]['state'] == readings['reading_b'][s]['state'] for s in ('prior', 'current'))
     return {'data': {**readings, 'consistent': consistent},
-            'trace': {'model_requests': 2, 'requested_model': a['trace']['requested_model'],
+            'trace': {'model_requests': sum(x['trace']['model_requests'] for x in (a, b)),
+                      'cached': all(x['trace'].get('cached') for x in (a, b)),
+                      'requested_model': a['trace']['requested_model'], 'used_model': a['trace'].get('used_model'),
                       'returned_model': a['trace']['returned_model'],
                       'seconds': max(a['trace']['seconds'], b['trace']['seconds']),
                       'input_tokens': sum(x['trace'].get('input_tokens') or 0 for x in (a, b)),

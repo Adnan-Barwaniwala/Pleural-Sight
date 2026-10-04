@@ -21,7 +21,13 @@ Open http://127.0.0.1:8765. If port 8765 is taken, set `TIMELENS_PORT=8766` firs
 | `TIMELENS_GEMINI_MODEL` | `gemini-3.5-flash` | Vision/text model |
 | `TIMELENS_GEMINI_FALLBACKS` | `gemini-3.7-flash,gemini-3.6-flash,gemini-3.8-flash` | Used only on 429/503 capacity errors; the model that answered is shown in the trace |
 | `TIMELENS_OPENSWARM_MODEL` | `gemini-3.8-flash` | Model that drives the OpenSwarm agents |
+| `GEMINI_API_KEYS` | — | Optional comma-separated pool (keys from different Cloud projects), rotated on 429 |
+| `TIMELENS_RESPONSE_CACHE` | `1` | Identical requests reuse the stored answer (trace shows *cached response*); set `0` for a fresh live call |
 | `TIMELENS_PORT` | `8765` | Local port |
+
+## Rate limits
+
+Google AI Pro (the consumer Gemini subscription) does **not** apply to the Gemini API. An API key whose Cloud project has no billing is on the free tier: **20 requests per model per day**. One live case uses 3–4 requests and the evaluation about 100. Fix: in AI Studio → API keys, **set up billing** on the key's project (Tier 1, about a fraction of a cent per case). Mitigations built in: a key pool (`GEMINI_API_KEYS`), model fallbacks, a local response cache, and cached replays.
 
 ## How a case is investigated
 

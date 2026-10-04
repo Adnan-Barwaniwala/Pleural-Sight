@@ -3,7 +3,7 @@
 ## Before you present
 
 1. Start OpenSwarm and confirm you are signed in (Settings → subscriptions shows Antigravity / Gemini 3.8 Flash).
-2. `.env` contains `GEMINI_API_KEY=...`. **Use a paid key.** A free-tier key allows only 20 requests per model per day, and one live case uses 3–4.
+2. `.env` contains `GEMINI_API_KEY=...`. **Enable billing on the key's project** (AI Studio → API keys → Set up billing). Google AI Pro does not raise API limits, and a free-tier key allows only 20 requests per model per day (one live case uses 3–4). Rehearse freely: repeated runs of the same case are served from the local cache (trace: *cached response*). For the one fresh on-stage run of Case C, set `TIMELENS_RESPONSE_CACHE=0`, or simply run a case you haven't run before.
 3. Start the app: `.venv\Scripts\python server.py`, then open http://127.0.0.1:8765. If the port is busy, run `$env:TIMELENS_PORT=8766` first.
 4. Refresh the cached demo results from real live runs:
    `.venv\Scripts\python scripts\build_replay.py --engine openswarm --all-demo`
