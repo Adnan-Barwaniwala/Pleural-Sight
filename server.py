@@ -205,6 +205,10 @@ async def local_only(request, next_handler):
 
 @app.get('/')
 def index():
+    return FileResponse(ROOT/'static/intro.html')
+
+@app.get('/workspace')
+def workspace_page():
     return FileResponse(ROOT/'static/index.html')
 
 @app.get('/api/state')
